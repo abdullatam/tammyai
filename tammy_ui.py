@@ -1,28 +1,32 @@
-# tammy_ui.py
-
 import gradio as gr
-from tammy_rag import ask_tammy  # uses updated RAG with chat history
+from tammy_rag import ask_tammy
 
 def tammy_chat(message, history):
-    """
-    Uses user input and chat history to generate Tammy's response.
-    """
-    response = ask_tammy(message, history=history)
+    # Ensure history is always a list
+    if history is None:
+        history = []
+
+    # Normalize history to valid pairs
+    clean_history = []
+    for item in history:
+        if isinstance(item, list) and len(item) == 2:
+            clean_history.append(item)
+        else:
+            # Skip invalid entries
+            continue
+    
+    response = ask_tammy(message, history=clean_history)
     return response
 
+
+
 title = "Tammy AI"
-description = "Ask Tammy questions based on her books, frameworks, and philosophy."
+description = "Ask Tammy anything."
 
 demo = gr.ChatInterface(
     fn=tammy_chat,
     title=title,
     description=description,
-    examples=[
-        "Summarize the EGG Method in 3 bullet points.",
-        "How does Tammy think about clarity?",
-        "What is my identity according to Tammy’s philosophy?",
-    ],
-    markdown=True,
 )
 
 if __name__ == "__main__":
