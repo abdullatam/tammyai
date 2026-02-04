@@ -3,7 +3,7 @@
 from datetime import datetime
 import time
 from typing import List, Dict, Any
-
+from typing import Optional
 from mongodb_client import user_sessions_col
 from pinecone_memory_store import upsert_memories
 
@@ -49,7 +49,7 @@ def generate_auto_summary(messages: List[Dict[str, str]]) -> Dict[str, Any]:
 def save_session(
     user_id: str,
     messages: List[Dict[str, str]],
-    summary: Dict[str, Any] | None = None,
+    summary: Optional[Dict[str, Any]] = None,
     session_type: str = "chat",
 ):
     """Stores the session in MongoDB and semantic memory in Pinecone."""
