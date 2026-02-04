@@ -2,18 +2,20 @@
 from dotenv import load_dotenv
 import os
 
+# Load environment
+load_dotenv()
+
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
-
-# Load environment
-load_dotenv()
 
 # Keys
 OPENAI_API_KEY   = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME       = os.getenv("TAMMY_INDEX_NAME", "tammy-books")
 NAMESPACE        = os.getenv("TAMMY_NAMESPACE", "tammy-v1")
+
+print("PINECONE KEY:", PINECONE_API_KEY)
 
 # Models
 EMB_MODEL  = os.getenv("TAMMY_EMB_MODEL",  "text-embedding-3-small")
@@ -38,8 +40,13 @@ vectorstore = PineconeVectorStore(
     text_key="chunk_content",
 )
 
-def get_retriever(k=10):
-    return vectorstore.as_retriever(search_kwargs={"k": k})
+def get_retriever():
+    return vectorstore.as_retriever(
+        search_kwargs={
+            "k": 3,
+            "fetch_k": 10
+        }
+    )
 
 def get_llm():
     return llm
