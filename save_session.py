@@ -1,32 +1,54 @@
 # save_session.py
+"""
+Session persistence to MongoDB and Pinecone.
+"""
 
 from datetime import datetime
 import time
-from typing import List, Dict, Any
-from typing import Optional
+from typing import List, Dict, Any, Optional
+
 from mongodb_client import user_sessions_col
-from pinecone_memory_store import upsert_memories
+from pinecone_manager import pinecone_manager
+from logger import get_logger
+from constants import (
+    ROLE_USER, ROLE_TAMMY, ROLE_ASSISTANT,
+    ERROR_NO_CONVERSATION, ERROR_NO_KEY_POINTS,
+    SENTIMENT_UNKNOWN, SESSION_TYPE_CHAT,
+    MAX_KEY_POINT_LENGTH, SUCCESS_SESSION_SAVED,
+    SUCCESS_MEMORY_SAVED, ERROR_EMPTY_MEMORY
+)
+
+logger = get_logger(__name__)
 
 
 # -----------------------------------------------------------
 # SAFE AUTO-SUMMARY (always returns valid strings)
 # -----------------------------------------------------------
 def generate_auto_summary(messages: List[Dict[str, str]]) -> Dict[str, Any]:
-    """Fallback summary generator that NEVER returns None."""
+    """
+    Fallback summary generator that NEVER returns None.
+    
+    Args:
+        messages: List of message dictionaries
+    
+    Returns:
+        Summary dictionary with text, key_points, sentiment, and tags
+    """
     if not messages:
+        logger.debug("No messages to summarize")
         return {
-            "text": "No conversation content available.",
-            "key_points": ["No key points available."],
-            "sentiment": "neutral",
+            "text": ERROR_NO_CONVERSATION,
+            "key_points": [ERROR_NO_KEY_POINTS],
+            "sentiment": SENTIMENT_UNKNOWN,
             "tags": [],
         }
 
     last_user_msg = next(
-        (m["text"] for m in reversed(messages) if m.get("role") == "user"),
+        (m["text"] for m in reversed(messages) if m.get("role") == ROLE_USER),
         "User said nothing."
     )
     last_tammy_msg = next(
-        (m["text"] for m in reversed(messages) if m.get("role") in ("tammy", "assistant")),
+        (m["text"] for m in reversed(messages) if m.get("role") in (ROLE_TAMMY, ROLE_ASSISTANT)),
         "Tammy replied nothing."
     )
 
@@ -35,10 +57,10 @@ def generate_auto_summary(messages: List[Dict[str, str]]) -> Dict[str, Any]:
     return {
         "text": summary_text,
         "key_points": [
-            last_user_msg[:120] or "No key point.",
+            last_user_msg[:MAX_KEY_POINT_LENGTH] or ERROR_NO_KEY_POINTS,
             "Tammy provided guidance.",
         ],
-        "sentiment": "unknown",
+        "sentiment": SENTIMENT_UNKNOWN,
         "tags": [],
     }
 
@@ -50,10 +72,20 @@ def save_session(
     user_id: str,
     messages: List[Dict[str, str]],
     summary: Optional[Dict[str, Any]] = None,
-    session_type: str = "chat",
-):
-    """Stores the session in MongoDB and semantic memory in Pinecone."""
-
+    session_type: str = SESSION_TYPE_CHAT,
+) -> Optional[str]:
+    """
+    Stores the session in MongoDB and semantic memory in Pinecone.
+    
+    Args:
+        user_id: User identifier
+        messages: List of message dictionaries
+        summary: Optional pre-generated summary
+        session_type: Type of session (chat, onboarding, etc.)
+    
+    Returns:
+        MongoDB inserted_id or None if failed
+    """
     # ----- Validate or generate summary -----
     if summary is None:
         summary = generate_auto_summary(messages)
@@ -68,17 +100,22 @@ def save_session(
     # -------------------------------------------------------
     # 1️⃣ SAVE SESSION TO MONGO
     # -------------------------------------------------------
-    session_data = {
-        "session_id": f"sess_{time.time()}",
-        "user_id": user_id,
-        "session_type": session_type,
-        "timestamp": datetime.utcnow(),
-        "messages": messages,
-        "summary": summary,
-    }
+    try:
+        session_data = {
+            "session_id": f"sess_{time.time()}",
+            "user_id": user_id,
+            "session_type": session_type,
+            "timestamp": datetime.utcnow(),
+            "messages": messages,
+            "summary": summary,
+        }
 
-    mongo_result = user_sessions_col.insert_one(session_data)
-    print(f"✅ Session saved to MongoDB: {mongo_result.inserted_id}")
+        mongo_result = user_sessions_col.insert_one(session_data)
+        logger.info(f"✅ {SUCCESS_SESSION_SAVED}: {mongo_result.inserted_id}")
+        
+    except Exception as e:
+        logger.error(f"Failed to save session to MongoDB: {e}")
+        return None
 
     # -------------------------------------------------------
     # 2️⃣ SAVE SEMANTIC MEMORY TO PINECONE
@@ -99,12 +136,15 @@ def save_session(
         memory_payload = [m for m in memory_payload if isinstance(m, str) and m.strip()]
 
         if memory_payload:
-            upsert_memories(user_id, memory_payload)
-            print("✅ Semantic memories saved to Pinecone")
+            success = pinecone_manager.upsert_memories(user_id, memory_payload)
+            if success:
+                logger.info(f"✅ {SUCCESS_MEMORY_SAVED}")
+            else:
+                logger.warning("Failed to save semantic memories")
         else:
-            print("⚠️ Nothing to save in Pinecone (empty memory list).")
+            logger.warning(f"⚠️ {ERROR_EMPTY_MEMORY}")
 
     except Exception as e:
-        print("❌ Pinecone memory upsert failed:", e)
+        logger.error(f"Pinecone memory upsert failed: {e}")
 
-    return mongo_result.inserted_id
+    return str(mongo_result.inserted_id)

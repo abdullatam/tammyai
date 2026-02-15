@@ -1,52 +1,68 @@
 # langchain_connect.py
-from dotenv import load_dotenv
-import os
-
-# Load environment
-load_dotenv()
+"""
+LangChain components with Pinecone vectorstore and OpenAI LLM.
+"""
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
-from pinecone import Pinecone
 
-# Keys
-OPENAI_API_KEY   = os.getenv("OPENAI_API_KEY")
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME       = os.getenv("TAMMY_INDEX_NAME", "tammy-books")
-NAMESPACE        = os.getenv("TAMMY_NAMESPACE", "tammy-v1")
+from config import config
+from logger import get_logger
+from pinecone_manager import pinecone_manager
 
-print("PINECONE KEY:", PINECONE_API_KEY)
+logger = get_logger(__name__)
 
-# Models
-EMB_MODEL  = os.getenv("TAMMY_EMB_MODEL",  "text-embedding-3-small")
-CHAT_MODEL = os.getenv("TAMMY_CHAT_MODEL", "gpt-4o-mini")
+# ============================================
+# LANGCHAIN COMPONENTS
+# ============================================
 
-assert OPENAI_API_KEY, "OPENAI_API_KEY missing"
-assert PINECONE_API_KEY, "PINECONE_API_KEY missing"
+# LLM
+llm = ChatOpenAI(
+    model=config.TAMMY_CHAT_MODEL,
+    temperature=config.TAMMY_TEMPERATURE,
+    api_key=config.OPENAI_API_KEY
+)
 
-# LLM + Embeddings
-llm = ChatOpenAI(model=CHAT_MODEL, temperature=0.2)
-embeddings = OpenAIEmbeddings(model=EMB_MODEL)
+# Embeddings
+embeddings = OpenAIEmbeddings(
+    model=config.TAMMY_EMB_MODEL,
+    api_key=config.OPENAI_API_KEY
+)
 
-# Pinecone client
-pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index(INDEX_NAME)
-
-# Vectorstore wrapper
+# Vectorstore wrapper using the unified pinecone_manager
 vectorstore = PineconeVectorStore(
-    index=index,
-    namespace=NAMESPACE,
+    index=pinecone_manager.rag_index,
+    namespace=config.TAMMY_NAMESPACE,
     embedding=embeddings,
     text_key="chunk_content",
 )
 
+logger.info("✅ LangChain components initialized")
+
+
 def get_retriever():
+    """
+    Get LangChain retriever for RAG documents.
+    
+    Returns:
+        Configured retriever instance
+    """
     return vectorstore.as_retriever(
         search_kwargs={
-            "k": 3,
-            "fetch_k": 10
+            "k": config.RAG_TOP_K,
+            "fetch_k": config.RAG_FETCH_K
         }
     )
 
+
 def get_llm():
+    """
+    Get LangChain LLM instance.
+    
+    Returns:
+        Configured ChatOpenAI instance
+    """
     return llm
+
+
+__all__ = ["get_retriever", "get_llm", "llm", "embeddings", "vectorstore"]
