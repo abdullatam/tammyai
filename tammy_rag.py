@@ -1,7 +1,13 @@
 # tammy_rag.py
+"""
+Main RAG logic for Tammy AI.
+Combines short-term (Redis), long-term (MongoDB), semantic (Pinecone), and RAG memories.
+"""
 
 from datetime import datetime
-from typing import List
+from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
@@ -10,10 +16,14 @@ from langchain_core.documents import Document
 
 from langchain_connect import get_retriever, get_llm
 from mongodb_client import user_profile_col, user_sessions_col
-
 from redis_memory_store import push_message, get_recent_messages
-from pinecone_memory_store import query_memories
+from pinecone_manager import pinecone_manager
 from save_session import save_session
+from config import config
+from logger import get_logger
+from constants import ROLE_USER, ROLE_TAMMY
+
+logger = get_logger(__name__)
 
 
 # -----------------------------------------------------
@@ -225,30 +235,62 @@ prompt = ChatPromptTemplate.from_messages(
 # -----------------------------------------------------
 # MEMORY HELPERS
 # -----------------------------------------------------
-def get_user_profile(user_id: str = "1234"):
-    return user_profile_col.find_one({"user_id": user_id})
-
-
-def build_long_term_memory_text(user_id: str = "1234") -> str:
+def get_user_profile(user_id: str) -> Optional[Dict[str, Any]]:
     """
-    Concatenate all session summaries & a few key messages into a single blob.
+    Get user profile from MongoDB.
+    
+    Args:
+        user_id: User identifier
+    
+    Returns:
+        User profile dictionary or None if not found
     """
-    sessions = user_sessions_col.find(
-        {"user_id": user_id},
-        sort=[("timestamp", -1)],
-        limit=10,
-    )
+    try:
+        profile = user_profile_col.find_one({"user_id": user_id})
+        if profile:
+            logger.debug(f"Retrieved profile for user {user_id}")
+        return profile
+    except Exception as e:
+        logger.error(f"Failed to get user profile: {e}")
+        return None
 
-    chunks: List[str] = []
-    for sess in sessions:
-        summary = sess.get("summary", {})
-        if isinstance(summary, dict):
-            if "text" in summary:
-                chunks.append("Summary: " + summary["text"])
-            for kp in summary.get("key_points", []):
-                chunks.append("Key Point: " + kp)
 
-    return "\n".join(chunks)
+def build_long_term_memory_text(user_id: str) -> str:
+    """
+    Concatenate all session summaries & key messages into a single text blob.
+    OPTIMIZED: Only fetches summary field, not full messages array.
+    
+    Args:
+        user_id: User identifier
+    
+    Returns:
+        Concatenated long-term memory text
+    """
+    try:
+        # Only project summary field for speed
+        sessions = user_sessions_col.find(
+            {"user_id": user_id},
+            {"summary": 1, "_id": 0},  # Only fetch summary, exclude _id
+            sort=[("timestamp", -1)],
+            limit=config.LONG_TERM_SESSION_LIMIT,
+        )
+
+        chunks: List[str] = []
+        for sess in sessions:
+            summary = sess.get("summary", {})
+            if isinstance(summary, dict):
+                if "text" in summary:
+                    chunks.append("Summary: " + summary["text"])
+                # Limit key points to first 2 for speed
+                for kp in summary.get("key_points", [])[:2]:
+                    chunks.append("Key Point: " + kp)
+
+        logger.debug(f"Built long-term memory with {len(chunks)} chunks")
+        return "\n".join(chunks)
+    
+    except Exception as e:
+        logger.error(f"Failed to build long-term memory: {e}")
+        return ""
 
 
 def clean_history_for_llm(history):
@@ -281,8 +323,105 @@ def clean_history_for_llm(history):
 # -----------------------------------------------------
 # MAIN FUNCTION: ask_tammy
 # -----------------------------------------------------
-def ask_tammy(question: str, user_id: str = "1234", history=None) -> str:
+def fetch_memories_parallel(user_id: str, question: str) -> Dict[str, Any]:
+    """
+    Fetch all memories in parallel for better performance.
+    
+    Args:
+        user_id: User identifier
+        question: User's question
+    
+    Returns:
+        Dictionary with all memory types
+    """
+    results = {
+        "short_term": "",
+        "long_term": "",
+        "semantic": "",
+        "rag_docs": "",
+        "profile": ""
+    }
+    
+    def fetch_short_term():
+        try:
+            recent_msgs = get_recent_messages(user_id)
+            return "\n".join(
+                f"{m.get('role', ROLE_USER)}: {m.get('text', '')}" for m in recent_msgs
+            )
+        except Exception as e:
+            logger.error(f"Failed to fetch short-term memory: {e}")
+            return ""
+    
+    def fetch_long_term():
+        try:
+            return build_long_term_memory_text(user_id)
+        except Exception as e:
+            logger.error(f"Failed to fetch long-term memory: {e}")
+            return ""
+    
+    def fetch_semantic():
+        try:
+            snippets = pinecone_manager.query_memories(user_id, question)
+            return "\n".join(snippets)
+        except Exception as e:
+            logger.error(f"Failed to fetch semantic memory: {e}")
+            return ""
+    
+    def fetch_rag():
+        try:
+            docs = retriever.invoke(question)
+            return "\n\n".join(d.page_content for d in docs)
+        except Exception as e:
+            logger.error(f"Failed to fetch RAG documents: {e}")
+            return ""
+    
+    def fetch_profile():
+        # OPTIMIZATION: Skip profile fetch for speed (rarely used in responses)
+        # Uncomment below if you need user profiles
+        return ""
+        # try:
+        #     profile = get_user_profile(user_id)
+        #     if not profile:
+        #         return ""
+        #     
+        #     profile_text = ""
+        #     name = profile.get("name")
+        #     if name:
+        #         profile_text += f"User name: {name}\n"
+        #     prefs = profile.get("preferences", {})
+        #     if prefs:
+        #         profile_text += f"Preferences: {prefs}\n"
+        #     return profile_text
+        # except Exception as e:
+        #     logger.error(f"Failed to fetch profile: {e}")
+        #     return ""
+    
+    # Execute all fetches in parallel (optimized to 4 workers)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(fetch_short_term): "short_term",
+            executor.submit(fetch_long_term): "long_term",
+            executor.submit(fetch_semantic): "semantic",
+            executor.submit(fetch_rag): "rag_docs",
+            executor.submit(fetch_profile): "profile"
+        }
+        
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                results[key] = future.result()
+            except Exception as e:
+                logger.error(f"Error fetching {key}: {e}")
+                results[key] = ""
+    
+    return results
 
+
+def ask_tammy(
+    question: str,
+    user_id: Optional[str] = None,
+    history: Optional[List] = None
+) -> str:
     """
     Main entry point called from tammy_ui.py.
     Combines:
@@ -290,79 +429,85 @@ def ask_tammy(question: str, user_id: str = "1234", history=None) -> str:
     - Mongo long-term summaries
     - Pinecone semantic memories
     - RAG documents
+    
+    Args:
+        question: User's question
+        user_id: User identifier (defaults to config.DEFAULT_USER_ID)
+        history: Conversation history from Gradio
+    
+    Returns:
+        Tammy's response
     """
-    # -------- 1. Update short-term memory in Redis --------
-    push_message(user_id, "user", question)
-    recent_msgs = get_recent_messages(user_id, limit=20)
-    short_term_text = "\n".join(
-        f"{m.get('role', 'user')}: {m.get('text', '')}" for m in recent_msgs
-    )
-
-    # -------- 2. Long-term memory from Mongo --------
-    long_term_text = build_long_term_memory_text(user_id=user_id)
-
-    # -------- 3. Semantic memory from Pinecone --------
-    semantic_snippets = query_memories(user_id=user_id, query=question, k=2)
-    semantic_text = "\n".join(semantic_snippets)
-
-    # -------- 4. RAG documents (Tammy books / frameworks) --------
-    docs = retriever.invoke(question)
-
-    doc_context = "\n\n".join(d.page_content for d in docs)
-
-    # -------- 5. User profile --------
-    profile = get_user_profile(user_id)
-    profile_text = ""
-    if profile:
-        name = profile.get("name")
-        if name:
-            profile_text += f"User name: {name}\n"
-        prefs = profile.get("preferences", {})
-        if prefs:
-            profile_text += f"Preferences: {prefs}\n"
-
-    # -------- 6. Build final context string --------
-    final_context = f"""
+    if not user_id:
+        user_id = config.DEFAULT_USER_ID
+    
+    start_time = time.time()
+    logger.info(f"Processing question from user {user_id}: {question[:50]}...")
+    
+    try:
+        # -------- 1. Push user message to short-term memory --------
+        push_message(user_id, ROLE_USER, question)
+        
+        # -------- 2. Fetch all memories in parallel --------
+        memory_start = time.time()
+        memories = fetch_memories_parallel(user_id, question)
+        memory_time = time.time() - memory_start
+        logger.info(f"⏱️ Memory fetch completed in {memory_time:.2f}s")
+        
+        # -------- 3. Build final context string --------
+        final_context = f"""
 === USER PROFILE ===
-{profile_text}
+{memories['profile']}
 
 === SHORT-TERM CHAT (Redis) ===
-{short_term_text}
+{memories['short_term']}
 
 === LONG-TERM MEMORY (Mongo summaries) ===
-{long_term_text}
+{memories['long_term']}
 
 === SEMANTIC MEMORY (Pinecone) ===
-{semantic_text}
+{memories['semantic']}
 
 === DOCUMENT CONTEXT (Books / Frameworks) ===
-{doc_context}
+{memories['rag_docs']}
 """
-
-    # -------- 7. LLM call --------
-    chat_history = clean_history_for_llm(history)
-    chain = prompt | llm | parser
-
-    response = chain.invoke(
-        {
-            "question": question,
-            "context": final_context,
-            "history": chat_history,
-        }
-    )
-
-    # -------- 8. Persist assistant reply --------
-    push_message(user_id, "tammy", response)
-
-    try:
-        save_session(
-            user_id=user_id,
-            messages=[
-                {"role": "user", "text": question},
-                {"role": "tammy", "text": response},
-            ],
+        
+        # -------- 4. LLM call --------
+        chat_history = clean_history_for_llm(history)
+        chain = prompt | llm | parser
+        
+        llm_start = time.time()
+        response = chain.invoke(
+            {
+                "question": question,
+                "context": final_context,
+                "history": chat_history,
+            }
         )
+        llm_time = time.time() - llm_start
+        total_time = time.time() - start_time
+        
+        logger.info(f"⏱️ LLM generation completed in {llm_time:.2f}s")
+        logger.info(f"⏱️ Total response time: {total_time:.2f}s")
+        logger.info(f"Generated response for user {user_id}")
+        
+        # -------- 5. Persist assistant reply --------
+        push_message(user_id, ROLE_TAMMY, response)
+        
+        # Save session asynchronously (don't block on errors)
+        try:
+            save_session(
+                user_id=user_id,
+                messages=[
+                    {"role": ROLE_USER, "text": question},
+                    {"role": ROLE_TAMMY, "text": response},
+                ],
+            )
+        except Exception as e:
+            logger.error(f"Save session failed: {e}")
+        
+        return response
+    
     except Exception as e:
-        print("⚠️ Save session failed:", e)
-
-    return response
+        logger.error(f"Error in ask_tammy: {e}", exc_info=True)
+        return "I'm sorry, I encountered an error processing your request. Please try again."
