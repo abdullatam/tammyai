@@ -105,20 +105,21 @@ def build_context(
         cal_lines.append("Be aware of this schedule in your responses — timing matters.")
         parts.append("\n".join(cal_lines))
 
-    # Emotional forecast (predictive)
+    # Emotional forecast — only inject when overdue AND high confidence.
+    # Low/medium confidence forecasts are noise that biases the LLM toward
+    # surfacing the predicted emotion as a "hidden signal" from the user.
     if emotional_forecast and emotional_forecast.get("predicted_emotion"):
         pred = emotional_forecast["predicted_emotion"]
         days = emotional_forecast.get("days_until", 0)
         conf = emotional_forecast.get("confidence", "low")
-        if days <= 2:
-            timing = "may be returning now" if days >= 0 else "appears overdue"
-        else:
-            timing = f"is statistically due in ~{days:.0f} days"
-        parts.append(
-            f"=== EMOTIONAL FORECAST ===\n"
-            f"Based on patterns: '{pred}' {timing} (confidence: {conf}). "
-            f"Do NOT force this — use it as signal only if the conversation opens that door."
-        )
+        # Only inject if: overdue (days < 0) AND high confidence
+        if days < 0 and conf == "high":
+            parts.append(
+                f"=== EMOTIONAL FORECAST ===\n"
+                f"Pattern signal only: '{pred}' appears statistically overdue (confidence: {conf}). "
+                f"Do NOT surface this unless the user opens the door themselves."
+            )
+        # Otherwise: omit entirely. Do not bias the response with uncertain predictions.
 
     # Active relationships (people they've mentioned recently)
     if relationships:
