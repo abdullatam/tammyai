@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tammy — web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tammy/styles.css" />
+<style>
+@keyframes orb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes orb-breathe-bg { 0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="tammy/data.js"></script>
+<script type="text/babel" src="tammy/components/Orb.jsx"></script>
+<script type="text/babel" src="tammy/components/Nav.jsx"></script>
+<script type="text/babel" src="tammy/components/Tweaks.jsx"></script>
+<script type="text/babel" src="tammy/components/Buckets.jsx"></script>
+<script type="text/babel" src="tammy/screens/Chat.jsx"></script>
+<script type="text/babel" src="tammy/screens/Today.jsx"></script>
+<script type="text/babel" src="tammy/screens/Arc.jsx"></script>
+<script type="text/babel" src="tammy/screens/Other.jsx"></script>
+<script type="text/babel" src="tammy/screens/Profile.jsx"></script>
+<script type="text/babel" src="tammy/screens/Extra.jsx"></script>
+
+<script type="text/babel">
+/*EDITMODE-BEGIN*/
+const TWEAK_DEFAULTS = {
+  "chatLayout": "prose",
+  "navVisible": true,
+  "orbPreview": "idle",
+  "palette": "white"
+};
+/*EDITMODE-END*/
+
+const PALETTES = {
+  white: {
+    '--canvas': '#FFFFFF', '--canvas-tint': '#F6F3FF', '--surface': '#FFFFFF', '--surface-2': '#F0EAFF',
+    '--ink': '#1F1C30', '--ink-2': '#3E3D40', '--ink-3': 'rgba(31, 28, 48, 0.55)',
+    '--mauve': 'rgba(31, 28, 48, 0.18)', '--mauve-soft': 'rgba(31, 28, 48, 0.07)',
+    '--amber': '#947DED', '--amber-hi': '#C0ACFF', '--amber-soft': 'rgba(148, 125, 237, 0.14)', '--amber-glow': 'rgba(148, 125, 237, 0.38)',
+  },
+  purple: {
+    '--canvas': '#1F1C30', '--canvas-tint': '#262339', '--surface': '#2A2740', '--surface-2': '#332F4A',
+    '--ink': '#FFFFFF', '--ink-2': 'rgba(255, 255, 255, 0.80)', '--ink-3': 'rgba(255, 255, 255, 0.58)',
+    '--mauve': 'rgba(255, 255, 255, 0.20)', '--mauve-soft': 'rgba(255, 255, 255, 0.08)',
+    '--amber': '#C0ACFF', '--amber-hi': '#947DED', '--amber-soft': 'rgba(192, 172, 255, 0.18)', '--amber-glow': 'rgba(192, 172, 255, 0.45)',
+  },
+};
+
+// ── Landing — login + register ────────────────────────────────────────────────
+const Landing = ({ onNavigate }) => {
+  const [mode, setMode] = React.useState('login');
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const API = 'http://localhost:7861';
+
+  const submit = async () => {
+    if (!username.trim() || !password) { setError('Fill in both fields.'); return; }
+    setLoading(true); setError('');
+    try {
+      const url = mode === 'login' ? `${API}/auth/login` : `${API}/auth/register`;
+      const r = await fetch(url, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        setError(e.detail || 'Something went wrong.');
+        setLoading(false); return;
+      }
+      const data = await r.json();
+      await window.TammyBootstrap();
+      if (mode === 'register' || !data.onboarding_complete) {
+        onNavigate('onboarding');
+      } else {
+        onNavigate('today');
+      }
+    } catch { setError('Cannot reach server.'); setLoading(false); }
+  };
+
+  const onKey = (e) => { if (e.key === 'Enter') submit(); };
+
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--canvas)', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 400 }}>
+        <div className="serif" style={{ fontSize: 48, fontWeight: 400, color: 'var(--ink)', marginBottom: 8, letterSpacing: '-0.03em' }}>
+          tammy.
+        </div>
+        <p style={{ fontSize: 15, color: 'var(--ink-3)', marginBottom: 40 }}>
+          your clarity partner.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+          {['login', 'register'].map(m => (
+            <button key={m} onClick={() => { setMode(m); setError(''); }} style={{
+              padding: '8px 20px', fontSize: 13, border: '1px solid var(--mauve-soft)',
+              borderRadius: 999, cursor: 'pointer', fontFamily: 'var(--f-sans)',
+              background: mode === m ? 'var(--ink)' : 'transparent',
+              color: mode === m ? 'var(--canvas)' : 'var(--ink-2)',
+            }}>{m}</button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          <input
+            value={username} onChange={e => setUsername(e.target.value)} onKeyDown={onKey}
+            placeholder="username" autoComplete="username"
+            style={{
+              padding: '14px 16px', fontSize: 15, border: '1px solid var(--mauve-soft)',
+              borderRadius: 12, background: 'var(--surface-2)', color: 'var(--ink)',
+              fontFamily: 'var(--f-sans)', outline: 'none', width: '100%', boxSizing: 'border-box',
+            }}
+          />
+          <input
+            type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={onKey}
+            placeholder="password" autoComplete="current-password"
+            style={{
+              padding: '14px 16px', fontSize: 15, border: '1px solid var(--mauve-soft)',
+              borderRadius: 12, background: 'var(--surface-2)', color: 'var(--ink)',
+              fontFamily: 'var(--f-sans)', outline: 'none', width: '100%', boxSizing: 'border-box',
+            }}
+          />
+        </div>
+
+        {error && <p style={{ color: 'var(--amber)', fontSize: 13, marginBottom: 14 }}>{error}</p>}
+
+        <button onClick={submit} disabled={loading} style={{
+          width: '100%', padding: '15px 0', fontSize: 15, fontFamily: 'var(--f-sans)',
+          background: 'var(--ink)', color: 'var(--canvas)', border: 'none', borderRadius: 12,
+          cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+          letterSpacing: '-0.01em',
+        }}>
+          {loading ? '...' : mode === 'login' ? 'Sign in' : 'Create account'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Onboarding ────────────────────────────────────────────────────────────────
+const OnboardingScreen = ({ onDone }) => {
+  const [step, setStep] = React.useState(0);
+  const [name, setName] = React.useState('');
+  const [venture, setVenture] = React.useState('');
+  const [goals, setGoals] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const API = 'http://localhost:7861';
+
+  const save = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${API}/onboarding/save`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          venture: venture.trim(),
+          goals: goals.split(',').map(g => g.trim()).filter(Boolean),
+          profile_summary: `${name.trim()} building ${venture.trim()}.`,
+        }),
+      });
+      await window.TammyBootstrap();
+      onDone();
+    } catch { setLoading(false); }
+  };
+
+  const steps = [
+    { q: "What do people call you?", field: 'name', val: name, set: setName, ph: "your name" },
+    { q: "What are you building?", field: 'venture', val: venture, set: setVenture, ph: "your venture or project" },
+    { q: "What are you trying to figure out?", field: 'goals', val: goals, set: setGoals, ph: "goals, comma-separated" },
+  ];
+  const s = steps[step];
+  const isLast = step === steps.length - 1;
+
+  const next = () => {
+    if (isLast) { save(); return; }
+    setStep(n => n + 1);
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--canvas)', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 480 }}>
+        <div className="mono" style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 32 }}>
+          {step + 1} / {steps.length}
+        </div>
+        <h2 className="serif" style={{ fontSize: 40, fontWeight: 400, color: 'var(--ink)', margin: '0 0 32px', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+          {s.q}
+        </h2>
+        <input
+          value={s.val} onChange={e => s.set(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && s.val.trim()) next(); }}
+          placeholder={s.ph} autoFocus
+          style={{
+            width: '100%', padding: '16px 0', fontSize: 22, border: 'none',
+            borderBottom: '1px solid var(--mauve)', background: 'transparent',
+            color: 'var(--ink)', fontFamily: 'var(--font-serif, Georgia)', outline: 'none',
+            boxSizing: 'border-box', marginBottom: 40, letterSpacing: '-0.01em',
+          }}
+        />
+        <button onClick={next} disabled={!s.val.trim() || loading} style={{
+          padding: '14px 32px', fontSize: 14, fontFamily: 'var(--f-sans)',
+          background: 'var(--ink)', color: 'var(--canvas)', border: 'none', borderRadius: 999,
+          cursor: s.val.trim() && !loading ? 'pointer' : 'not-allowed',
+          opacity: s.val.trim() && !loading ? 1 : 0.4,
+        }}>
+          {loading ? 'Saving...' : isLast ? 'Start' : 'Next →'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── App ───────────────────────────────────────────────────────────────────────
+const App = () => {
+  const [route, setRoute] = React.useState('_loading');
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [tweaksOn, setTweaksOn] = React.useState(false);
+  const [activeBucket, setActiveBucket] = React.useState('b_tammy');
+  const [userInitial, setUserInitial] = React.useState('?');
+
+  // Auth check on mount
+  React.useEffect(() => {
+    window.TammyCheckAuth().then(({ auth, onboarding_complete, user }) => {
+      if (!auth) {
+        setRoute('landing');
+      } else {
+        if (user) {
+          setUserInitial((user.name || user.username || '?')[0].toUpperCase());
+          window.TammyBootstrap().catch(() => {});
+        }
+        setRoute(onboarding_complete ? 'today' : 'onboarding');
+      }
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const p = PALETTES[tweaks.palette] || PALETTES.white;
+    Object.entries(p).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  }, [tweaks.palette]);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOn(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOn(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweaks = (next) => {
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+  };
+
+  const go = (r) => setRoute(r);
+
+  if (route === '_loading') return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--canvas)' }}>
+      <div className="serif" style={{ fontSize: 32, color: 'var(--ink-3)', letterSpacing: '-0.02em' }}>tammy.</div>
+    </div>
+  );
+
+  if (route === 'landing')    return <Landing onNavigate={go} />;
+  if (route === 'onboarding') return <OnboardingScreen onDone={() => {
+    setUserInitial((window.TammyData.user.name || '?')[0].toUpperCase());
+    go('today');
+  }} />;
+  if (route === 'voice') return <VoiceMode onExit={() => go('chat')} />;
+
+  const init = window.TammyData?.user?.initial || userInitial;
+
+  const Screen =
+    route === 'today'       ? <TodayScreen onNavigate={go} activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+    route === 'chat'        ? <ChatScreen layout={tweaks.chatLayout} onOpenVoice={() => go('voice')} activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+    route === 'arc'         ? <ArcScreen activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+    route === 'dna'         ? <DNAScreen /> :
+    route === 'blindspots'  ? <BlindSpotsScreen /> :
+    route === 'calibration' ? <CalibrationScreen /> :
+    route === 'mirror'      ? <MirrorScreen /> :
+    route === 'decisions'   ? <DecisionsScreen /> :
+    route === 'projects'    ? <ProjectsScreen /> :
+    route === 'network'     ? <NetworkScreen /> :
+    route === 'memory'      ? <MemoryScreen /> :
+    route === 'settings'    ? <SettingsScreen /> :
+    route === 'profile'     ? <ProfileScreen onNavigate={go} /> :
+    <TodayScreen onNavigate={go} activeBucket={activeBucket} setActiveBucket={setActiveBucket} />;
+
+  return (
+    <>
+      {tweaks.navVisible && <Nav active={route} onNavigate={go} userInitial={init} />}
+      {Screen}
+      <TweaksPanel tweaks={tweaks} setTweaks={updateTweaks} visible={tweaksOn} />
+      <div style={{
+        position: 'fixed', top: 18, right: 18, zIndex: 400,
+        display: 'flex', gap: 3, padding: 3, borderRadius: 999,
+        background: 'rgba(250, 244, 230, 0.75)', backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(28, 20, 16, 0.15)',
+        boxShadow: '0 4px 16px rgba(28, 20, 16, 0.08)',
+      }}>
+        {[['white', 'white'], ['purple', 'purple']].map(([v, l]) => (
+          <button key={v} onClick={() => updateTweaks({ ...tweaks, palette: v })} style={{
+            padding: '6px 14px', fontSize: 11, border: 'none', borderRadius: 999,
+            background: tweaks.palette === v ? 'var(--ink)' : 'transparent',
+            color: tweaks.palette === v ? 'var(--canvas)' : 'var(--ink-3)',
+            fontFamily: 'var(--f-mono)', letterSpacing: '0.12em', textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}>{l}</button>
+        ))}
+      </div>
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,268 +1,134 @@
-# ✨ Tammy AI
+<div align="center">
+  <img src="frontend/web/public/tammy_logo.png" alt="Tammy AI Logo" width="120" />
+  <h1>Tammy AI</h1>
+  <p><strong>The Emotionally Intelligent Digital Co-Founder for Entrepreneurs</strong></p>
 
-**The First AI Clarity Partner**
+  <p>
+    <a href="https://github.com/abdullatam/tammyai/actions"><img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status"></a>
+    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.100.0-009688.svg?logo=fastapi" alt="FastAPI"></a>
+    <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18.0-61DAFB.svg?logo=react" alt="React"></a>
+    <a href="https://www.mongodb.com/"><img src="https://img.shields.io/badge/MongoDB-Active-47A248.svg?logo=mongodb" alt="MongoDB"></a>
+    <a href="https://www.anthropic.com/"><img src="https://img.shields.io/badge/Claude-3.5_Sonnet-D97757.svg?logo=anthropic" alt="Claude"></a>
+  </p>
 
-Tammy is a highly adaptive AI designed to guide users toward clarity, alignment, and growth. Built with a sophisticated memory system combining short-term, long-term, and semantic memories, Tammy provides context-aware, personalized responses.
+  <p>
+    <em>Tammy is not just a chatbot. She is a memory-persistent, emotionally aware, proactive intelligence designed to unlock the psychology and potential of founders.</em>
+  </p>
+</div>
 
 ---
 
-## 🚀 Quick Start
+## 🌌 Vision
+
+Building a company is the ultimate psychological gauntlet. Founders face daily isolation, decision fatigue, and emotional burnout. Tammy exists to bridge the gap between human psychology and artificial intelligence. 
+
+She doesn’t just answer questions—she tracks your emotional arc, spots your blindspots, holds you accountable to your decisions, and connects you with a curated network of peers. She is the infrastructure for emotional intelligence.
+
+## ✨ Core Features
+
+* **🧠 Semantic Memory Engine:** Tammy remembers everything. Using Pinecone vector embeddings, she recalls past decisions, relationships, and context flawlessly across sessions.
+* **❤️ Emotional Intelligence (EQ):** A background state machine tracks your emotional valence and arousal, flagging unresolved "emotional threads" for future check-ins.
+* **🎙️ Voice & Streaming:** Real-time, interruptible voice conversations powered by OpenAI Whisper/TTS and Anthropic Claude via SSE streaming.
+* **🧬 Founder DNA:** An automated profiling system that categorizes your leadership style, cognitive biases, and communication patterns.
+* **🔮 The Mirror Moment:** A hard-truth, earned summary of your recent avoidance patterns and challenges, generated purely from your raw conversation data.
+* **🌐 Tammy Connect:** An AI-driven networking layer that spots complementary skills between founders and orchestrates double-opt-in warm introductions.
+* **🌍 Bilingual Context:** Native fluency and cultural awareness in both Arabic and English.
+
+---
+
+## 🏗️ Architecture Overview
+
+Tammy's architecture is designed for low-latency, real-time AI orchestration. 
+
+```mermaid
+graph TD
+    Client[Web/Mobile Client] -->|SSE Stream| FastAPI[FastAPI Backend]
+    FastAPI -->|State Management| MongoDB[(MongoDB)]
+    FastAPI -->|Semantic Search| Pinecone[(Pinecone Vector DB)]
+    FastAPI -->|LLM Inference| Claude[Anthropic Claude 3.5]
+    FastAPI -->|Voice Modality| Whisper[OpenAI Audio]
+    
+    subgraph Intelligence Layer
+        Pinecone
+        Claude
+        FastAPI
+    end
+```
+
+### Directory Structure
+```text
+tammyai/
+├── frontend/          # React web client and Admin dashboard
+├── backend/           # Core FastAPI server and REST routes
+├── ai/                # LLM orchestration, memory, and RAG pipelines
+├── infrastructure/    # Deployment, Docker, and CI/CD configs
+├── docs/              # Comprehensive platform documentation
+└── scripts/           # Utility scripts for DB management and testing
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.9+
-- OpenAI API key
-- Pinecone account
-- MongoDB instance
-- Redis instance
+- Python 3.10+
+- MongoDB instance (local or Atlas)
+- Pinecone Account & Index
+- API Keys: Anthropic, OpenAI, Speechmatics
 
 ### Installation
 
-1. **Clone and navigate to the repository**
-```bash
-cd tammy
-```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/abdullatam/tammyai.git
+   cd tammyai
+   ```
 
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
+2. **Set up the virtual environment:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-3. **Set up environment variables**
+3. **Configure Environment Variables:**
+   Copy the example environment file and fill in your keys:
+   ```bash
+   cp .env.example .env
+   ```
 
-Create a `.env` file with your credentials:
-
-```bash
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# Pinecone
-PINECONE_API_KEY=...
-TAMMY_INDEX_NAME=tammy-books
-TAMMY_MEMORY_INDEX=tammy-memories
-TAMMY_NAMESPACE=tammy-v1
-
-# MongoDB
-MONGO_URI=mongodb+srv://...
-
-# Redis
-REDIS_HOST=...
-REDIS_PORT=6379
-REDIS_PASSWORD=...
-
-# Optional Configuration
-LOG_LEVEL=INFO
-GRADIO_SHARE=true
-```
-
-4. **Run Tammy**
-```bash
-python tammy_ui.py
-```
-
-The Gradio interface will launch at `http://localhost:7860`
+4. **Start the Platform:**
+   We provide a convenient bash script to start the server:
+   ```bash
+   ./run_tammy.sh
+   ```
+   *The backend will boot on `http://localhost:7861` and serve the React frontend automatically.*
 
 ---
 
-## 🏗️ Architecture
+## 🎨 Design Philosophy
 
-### Memory System
-
-Tammy uses a multi-layered memory architecture:
-
-```
-┌─────────────────────────────────────────────┐
-│            User Question                     │
-└──────────────────┬──────────────────────────┘
-                   │
-       ┌───────────┴───────────┐
-       │   Parallel Queries    │
-       └───────────┬───────────┘
-                   │
-    ┌──────────────┼──────────────┐
-    │              │              │
-    ▼              ▼              ▼
-┌────────┐   ┌──────────┐   ┌──────────┐
-│ Redis  │   │ MongoDB  │   │ Pinecone │
-│ Short  │   │ Long     │   │ Semantic │
-│ Term   │   │ Term     │   │ Memory   │
-└────────┘   └──────────┘   └──────────┘
-    │              │              │
-    └──────────────┼──────────────┘
-                   │
-         ┌─────────▼─────────┐
-         │   RAG Documents   │
-         │   (Pinecone)      │
-         └─────────┬─────────┘
-                   │
-         ┌─────────▼─────────┐
-         │   LLM (GPT-4)     │
-         └─────────┬─────────┘
-                   │
-         ┌─────────▼─────────┐
-         │    Response       │
-         └───────────────────┘
-```
-
-### Components
-
-- **`tammy_ui.py`** - Gradio web interface
-- **`tammy_rag.py`** - Core RAG logic with parallel memory queries
-- **`config.py`** - Centralized configuration management
-- **`pinecone_manager.py`** - Unified Pinecone operations (RAG + Memory)
-- **`redis_client.py`** - Redis connection pooling
-- **`mongodb_client.py`** - MongoDB client with health checks
-- **`langchain_connect.py`** - LangChain components
-- **`save_session.py`** - Session persistence
-- **`logger.py`** - Structured logging
-- **`constants.py`** - Application constants
+Tammy is designed to feel **intimate, deep, warm, sharp, and cultural.**
+We completely avoid the "generic AI" aesthetic (no sterile gradients or robotic UI). Instead, the interface relies on deep irises, warm ivories, and natural, fluid animations (The Orb system) to make the user feel heard and grounded.
 
 ---
 
-## 🎯 Key Features
+## 🔒 Security & Privacy
 
-### 🧠 Multi-Layer Memory
-- **Short-term**: Recent conversation (Redis, 2-hour TTL)
-- **Long-term**: Session summaries (MongoDB)
-- **Semantic**: Relevant past conversations (Pinecone vector search)
-- **RAG**: Framework knowledge (Pinecone documents)
-
-### ⚡ Performance
-- **Parallel memory queries** (5x faster than sequential)
-- **Connection pooling** for Redis
-- **Singleton patterns** for efficient resource usage
-- **Configurable retrieval limits**
-
-### 🛡️ Reliability
-- **Comprehensive error handling**
-- **Graceful degradation** when services fail
-- **Health checks** for all external services
-- **Automatic configuration validation**
-
-### 📊 Observability
-- **Structured logging** throughout
-- **Configurable log levels**
-- **Debug mode** for development
-- **Health check endpoints**
+Founder data is highly sensitive. Tammy is built with privacy at its core:
+- All semantic memories are strictly partitioned by `user_id` at the vector-database level.
+- Conversation payloads are never used to train base foundation models.
+- JWT and secure HTTP-only cookies handle all session authentication.
 
 ---
 
-## 📖 Configuration
+## 🤝 Contributing
 
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENAI_API_KEY` | Required | OpenAI API key |
-| `PINECONE_API_KEY` | Required | Pinecone API key |
-| `MONGO_URI` | Required | MongoDB connection string |
-| `REDIS_HOST` | Required | Redis host |
-| `REDIS_PASSWORD` | Required | Redis password |
-| `LOG_LEVEL` | `INFO` | Logging level |
-| `DEFAULT_USER_ID` | `1234` | Default user ID |
-| `REDIS_TTL` | `7200` | Redis TTL (seconds) |
-| `SHORT_TERM_MESSAGE_LIMIT` | `20` | Recent messages to retrieve |
-| `LONG_TERM_SESSION_LIMIT` | `10` | Past sessions to load |
-| `RAG_TOP_K` | `3` | RAG documents to retrieve |
-| `SEMANTIC_MEMORY_K` | `2` | Semantic memories to retrieve |
-| `GRADIO_SHARE` | `true` | Create public Gradio link |
-| `GRADIO_SERVER_PORT` | `7860` | Gradio server port |
-
----
-
-## 🔧 Development
-
-### Enable Debug Logging
-
-```bash
-# In .env
-LOG_LEVEL=DEBUG
-```
-
-### Health Checks
-
-```python
-from redis_client import _redis_client
-from mongodb_client import _mongodb_client
-from pinecone_manager import pinecone_manager
-
-# Check all services
-print("Redis:", _redis_client.health_check())
-print("MongoDB:", _mongodb_client.health_check())
-print("Pinecone:", pinecone_manager.health_check())
-```
-
-### Run Without Gradio
-
-```python
-from tammy_rag import ask_tammy
-
-response = ask_tammy(
-    question="What is Tammy?",
-    user_id="user123"
-)
-print(response)
-```
-
----
-
-## 📚 Recent Improvements
-
-See [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) for detailed information about recent improvements including:
-
-- ✅ Centralized configuration with validation
-- ✅ Unified Pinecone manager (no duplication)
-- ✅ Parallel memory queries (5x faster)
-- ✅ Connection pooling for Redis
-- ✅ Comprehensive error handling
-- ✅ Structured logging framework
-- ✅ Type hints throughout
-- ✅ Production-ready code
-
----
-
-## 🎨 UI Features
-
-- **Modern, clean interface** with custom styling
-- **Real-time chat** with streaming responses
-- **Error handling** with user-friendly messages
-- **Clear button** to reset conversations
-- **Mobile-responsive** design
-
----
-
-## 🔒 Security
-
-- Environment variables for all secrets
-- No hard-coded credentials
-- `.env` file excluded from version control
-- Secure MongoDB and Redis connections
+We welcome contributions from engineers who are passionate about AI, psychology, and design.
+Please read our [CONTRIBUTING.md](docs/CONTRIBUTING.md) to understand our architectural principles and commit conventions.
 
 ---
 
 ## 📄 License
 
-See [LICENSE](LICENSE) file for details.
-
----
-
-## 🤝 Support
-
-For issues or questions, please check:
-1. [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) for configuration help
-2. Enable `LOG_LEVEL=DEBUG` for detailed logs
-3. Run health checks on all services
-
----
-
-## 🎯 Roadmap
-
-- [ ] Multi-user support with authentication
-- [ ] Async/await for better concurrency
-- [ ] Caching layer for user profiles
-- [ ] Monitoring and metrics
-- [ ] Unit and integration tests
-- [ ] Docker containerization
-
----
-
-**Built with ❤️ for original thinkers building sovereign lives and companies.** 
+Tammy AI is proprietary software. All rights reserved.
