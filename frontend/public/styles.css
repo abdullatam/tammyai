@@ -1,0 +1,134 @@
+/* TAMMY — Brand palette
+   color-1 #FFF, color-2 #947DED (primary purple), color-3 #1F1C30 (ink),
+   color-4 #C0ACFF (light purple), color-5 #3E3D40 (neutral gray)
+*/
+:root {
+  /* Paper — white scale */
+  --canvas: #FFFFFF;
+  --canvas-tint: #F6F3FF;
+  --surface: #FFFFFF;
+  --surface-2: #F0EAFF;
+
+  /* Ink — deep cool near-black with purple tint */
+  --ink: #1F1C30;                        /* primary text */
+  --ink-2: #3E3D40;                      /* secondary, neutral gray */
+  --ink-3: rgba(31, 28, 48, 0.55);       /* tertiary */
+  --mauve: rgba(31, 28, 48, 0.18);       /* border */
+  --mauve-soft: rgba(31, 28, 48, 0.07);  /* hairline */
+
+  /* Accent — brand purple, used for the most important moment per screen */
+  --amber: #947DED;                      /* primary purple */
+  --amber-hi: #C0ACFF;                   /* light purple highlight */
+  --amber-soft: rgba(148, 125, 237, 0.14);
+  --amber-glow: rgba(148, 125, 237, 0.38);
+
+  /* Legacy aliases — keep existing JSX working */
+  --iris: var(--ink);
+  --iris-2: var(--ink-2);
+  --lilac: var(--mauve);
+  --sage: var(--amber);
+  --sage-soft: var(--amber-soft);
+  --sienna: var(--amber);
+  --sienna-soft: var(--amber-soft);
+  --ivory: var(--surface);
+
+  --f-sans: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --f-serif: 'Inter', -apple-system, system-ui, sans-serif;
+  --f-mono: 'Inter', ui-monospace, 'SF Mono', monospace;
+
+  --r-sm: 10px; --r-md: 16px; --r-lg: 24px; --r-xl: 32px;
+
+  --shadow-sm: 0 1px 2px rgba(31, 28, 48, 0.05);
+  --shadow-md: 0 8px 24px rgba(31, 28, 48, 0.08);
+  --shadow-lg: 0 20px 60px rgba(31, 28, 48, 0.14);
+  --shadow-glow-amber: 0 0 40px rgba(148, 125, 237, 0.30);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--f-sans);
+  color: var(--ink);
+  background:
+    radial-gradient(1000px 700px at 88% 8%, var(--amber-soft), transparent 60%),
+    linear-gradient(180deg, var(--canvas) 0%, var(--canvas-tint) 100%);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.19 0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+}
+
+.serif { font-family: var(--f-serif); font-weight: 400; letter-spacing: -0.01em; }
+.mono { font-family: var(--f-mono); letter-spacing: 0; }
+.muted { color: var(--ink-3); }
+.faint { color: var(--mauve); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-family: var(--f-sans);
+  font-size: 14px; font-weight: 500;
+  border: none; cursor: pointer;
+  transition: all 250ms ease;
+  letter-spacing: -0.005em;
+}
+.btn-primary {
+  background: var(--amber);
+  color: #FFFFFF;
+  box-shadow: 0 6px 22px var(--amber-glow);
+}
+.btn-primary:hover {
+  background: var(--amber-hi);
+  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px var(--amber-glow);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--mauve);
+}
+.btn-ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--mauve-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--mauve); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+::-webkit-scrollbar-track { background: transparent; }
+
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: var(--f-sans);
+  border: 1px solid var(--mauve);
+  background: var(--surface);
+  color: var(--ink-2);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }

@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tammy Admin — System Health</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ──────────────────────────────────────────────
+     Tammy admin — same DNA + fonts as the consumer app.
+     Two modes: light paper (default) and purple-night. */
+  :root,
+  body[data-mode="light"] {
+    --canvas:        #FFFFFF;
+    --canvas-tint:   #F6F3FF;
+    --surface:       #FFFFFF;
+    --surface-2:     #F0EAFF;
+    --surface-3:     #E8DFFB;
+
+    --ink:           #1F1C30;
+    --ink-2:         #3E3D40;
+    --ink-3:         rgba(31,28,48,0.55);
+    --mauve:         rgba(31,28,48,0.18);
+    --mauve-soft:    rgba(31,28,48,0.07);
+
+    --amber:         #947DED;
+    --amber-hi:      #C0ACFF;
+    --amber-soft:    rgba(148,125,237,0.14);
+    --amber-glow:    rgba(148,125,237,0.38);
+    --iris-deep:     #6B5BC8;
+
+    --atm-grad-1:    rgba(192,172,255,0.32);
+    --atm-grad-2:    rgba(148,125,237,0.18);
+    --chrome-bg:     rgba(255,255,255,0.72);
+
+    /* Status palette — tuned for light canvas */
+    --ok:            #5E9577;
+    --ok-soft:       rgba(94,149,119,0.14);
+    --ok-glow:       rgba(94,149,119,0.45);
+    --warn:          #C77F2E;
+    --warn-soft:     rgba(199,127,46,0.14);
+    --warn-glow:     rgba(199,127,46,0.45);
+    --bad:           #B95A3D;
+    --bad-soft:      rgba(185,90,61,0.14);
+    --bad-glow:      rgba(185,90,61,0.45);
+  }
+
+  body[data-mode="purple"] {
+    --canvas:        #1F1C30;
+    --canvas-tint:   #262339;
+    --surface:       #2A2740;
+    --surface-2:     #332F4A;
+    --surface-3:     #3B3756;
+
+    --ink:           #F2EDFF;
+    --ink-2:         rgba(242,237,255,0.78);
+    --ink-3:         rgba(242,237,255,0.50);
+    --mauve:         rgba(242,237,255,0.20);
+    --mauve-soft:    rgba(242,237,255,0.08);
+
+    --amber:         #C0ACFF;
+    --amber-hi:      #E0D2FF;
+    --amber-soft:    rgba(192,172,255,0.16);
+    --amber-glow:    rgba(192,172,255,0.45);
+    --iris-deep:     #C0ACFF;
+
+    --atm-grad-1:    rgba(192,172,255,0.18);
+    --atm-grad-2:    rgba(107,91,200,0.28);
+    --chrome-bg:     rgba(31,28,48,0.72);
+
+    /* Status — slightly brighter on dark */
+    --ok:            #8FCFA8;
+    --ok-soft:       rgba(143,207,168,0.16);
+    --ok-glow:       rgba(143,207,168,0.55);
+    --warn:          #E8A24B;
+    --warn-soft:     rgba(232,162,75,0.16);
+    --warn-glow:     rgba(232,162,75,0.55);
+    --bad:           #D97757;
+    --bad-soft:      rgba(217,119,87,0.18);
+    --bad-glow:      rgba(217,119,87,0.55);
+  }
+
+  :root {
+
+    --f-sans:  'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --f-serif: 'Inter', -apple-system, system-ui, sans-serif;
+    --f-mono:  'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+    --r-sm: 10px; --r-md: 16px; --r-lg: 24px; --r-xl: 32px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--canvas); color: var(--ink); font-family: var(--f-sans); }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(1000px 700px at 88% 8%, var(--atm-grad-1), transparent 60%),
+      radial-gradient(700px 500px at 12% 100%, var(--atm-grad-2), transparent 60%),
+      linear-gradient(180deg, var(--canvas) 0%, var(--canvas-tint) 100%);
+    font-size: 15px; line-height: 1.55;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background 600ms cubic-bezier(0.32,0.72,0.24,1);
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.11 0 0 0 0 0.19 0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.04; mix-blend-mode: multiply;
+  }
+
+  /* ────────── Admin chrome ────────── */
+  .admin-chrome {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+    background: var(--chrome-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--mauve-soft);
+  }
+  /* Light/Purple mode toggle */
+  .mode-toggle {
+    display: inline-flex; align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--mauve-soft);
+    border-radius: 999px;
+    padding: 3px;
+    margin-right: 14px;
+  }
+  .mode-toggle button {
+    padding: 6px 12px;
+    border: none; background: transparent;
+    border-radius: 999px;
+    font-family: var(--f-mono);
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-3);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all 180ms ease;
+  }
+  .mode-toggle button[aria-pressed="true"] {
+    background: var(--ink); color: var(--canvas);
+  }
+  .mode-toggle .swatch {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .mode-toggle .swatch.light  { background: linear-gradient(135deg, #FFFFFF 0%, #C0ACFF 100%); border: 1px solid var(--mauve); }
+  .mode-toggle .swatch.purple { background: linear-gradient(135deg, #C0ACFF, #6B5BC8); }
+  .crumb {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .crumb .brand {
+    display: inline-flex; align-items: center; gap: 10px; color: var(--ink);
+  }
+  .crumb .orb {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #FFFFFF, #C0ACFF 30%, #947DED 65%, #6B5BC8 100%);
+    box-shadow: 0 0 12px var(--amber-glow);
+    animation: orbBreathe 4.5s cubic-bezier(0.32,0.72,0.24,1) infinite;
+  }
+  .crumb .sep { color: var(--ink-3); opacity: 0.5; }
+  .crumb .here { color: var(--ink); }
+  .who {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--f-mono); font-size: 11px;
+    color: var(--ink-3); letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .who .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--ink), var(--amber));
+    color: var(--canvas);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-sans); font-weight: 500; font-size: 13px;
+  }
+  @keyframes orbBreathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+
+  /* ────────── Page ────────── */
+  .page {
+    position: relative; z-index: 1;
+    max-width: 1340px;
+    margin: 0 auto;
+    padding: 88px 32px 64px;
+  }
+
+  /* Header */
+  .header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px; padding-bottom: 24px; margin-bottom: 28px;
+    border-bottom: 1px solid var(--mauve-soft);
+  }
+  .header h1 {
+    font-family: var(--f-sans); font-weight: 500;
+    font-size: 40px; line-height: 1.05; letter-spacing: -0.025em;
+    margin: 0 0 12px; color: var(--ink);
+  }
+  .header .ts {
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-3);
+    display: inline-flex; align-items: center; gap: 14px;
+  }
+  .header .ts .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--ok); box-shadow: 0 0 10px var(--ok-glow);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* Refresh button */
+  .refresh {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 14px 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--mauve);
+    border-radius: var(--r-md);
+    color: var(--ink);
+    cursor: pointer;
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    transition: all 180ms cubic-bezier(0.32,0.72,0.24,1);
+  }
+  .refresh:hover {
+    background: var(--surface-2); border-color: var(--amber);
+  }
+  .refresh.busy svg { animation: spin 700ms linear infinite; }
+  .refresh .ring {
+    width: 22px; height: 22px; position: relative; flex-shrink: 0;
+  }
+  .refresh .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .refresh .ring circle.track { fill: none; stroke: var(--mauve); stroke-width: 1.5; }
+  .refresh .ring circle.bar { fill: none; stroke: var(--amber); stroke-width: 1.5;
+    stroke-dasharray: 56.5; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .refresh .ring .count {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-mono); font-size: 8px; color: var(--ink-2);
+    letter-spacing: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ────────── Status banner ────────── */
+  .banner {
+    position: relative;
+    padding: 20px 24px;
+    border-radius: var(--r-lg);
+    margin-bottom: 36px;
+    display: flex; align-items: center; gap: 18px;
+    border: 1px solid var(--mauve-soft);
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(31,28,48,0.06);
+  }
+  .banner.ok      { background: linear-gradient(90deg, var(--ok-soft) 0%, var(--surface) 60%); border-color: rgba(94,149,119,0.30); }
+  .banner.degraded{ background: linear-gradient(90deg, var(--warn-soft) 0%, var(--surface) 60%); border-color: rgba(199,127,46,0.32); }
+  .banner.critical{ background: linear-gradient(90deg, var(--bad-soft) 0%, var(--surface) 60%); border-color: rgba(185,90,61,0.42); }
+
+  .banner .mark {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-family: var(--f-sans); font-weight: 600;
+    font-size: 20px;
+  }
+  .banner.ok .mark      { background: var(--ok); color: var(--canvas); box-shadow: 0 0 22px var(--ok-glow); }
+  .banner.degraded .mark{ background: var(--warn); color: var(--canvas); box-shadow: 0 0 22px var(--warn-glow); }
+  .banner.critical .mark{ background: var(--bad); color: var(--canvas); box-shadow: 0 0 22px var(--bad-glow); }
+
+  .banner .label {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 4px;
+  }
+  .banner .title {
+    font-family: var(--f-sans); font-weight: 500;
+    font-size: 22px; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .banner.degraded .title em,
+  .banner.critical .title em { font-style: normal; color: var(--warn); font-weight: 600; }
+  .banner.critical .title em { color: var(--bad); }
+
+  .banner .uptime {
+    margin-left: auto;
+    text-align: right;
+  }
+  .banner .uptime .n {
+    font-family: var(--f-sans); font-weight: 500;
+    font-size: 32px; line-height: 1; letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .banner .uptime .l {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-3); margin-top: 6px;
+  }
+
+  /* ────────── Section heading ────────── */
+  .section-h {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 40px 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--mauve-soft);
+  }
+  .section-h h2 {
+    font-family: var(--f-sans); font-weight: 500;
+    font-size: 18px; letter-spacing: -0.01em;
+    margin: 0; color: var(--ink);
+  }
+  .section-h .h-meta {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ────────── Service grid ────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 720px)  { .grid { grid-template-columns: 1fr; } }
+
+  .svc {
+    position: relative;
+    padding: 20px 22px;
+    background: var(--surface);
+    border: 1px solid var(--mauve-soft);
+    border-radius: var(--r-lg);
+    box-shadow: 0 4px 14px rgba(31,28,48,0.04);
+    transition: all 220ms cubic-bezier(0.32,0.72,0.24,1);
+  }
+  .svc:hover { border-color: var(--mauve); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(31,28,48,0.08); }
+
+  .svc .row1 {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .svc .name {
+    font-family: var(--f-sans); font-weight: 600;
+    font-size: 15px; color: var(--ink); letter-spacing: -0.005em;
+    margin-bottom: 2px;
+  }
+  .svc .provider {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .svc .stat {
+    display: inline-flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+  }
+  .stat-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    position: relative; flex-shrink: 0;
+  }
+  .stat-dot.ok   { background: var(--ok);   box-shadow: 0 0 10px var(--ok-glow); }
+  .stat-dot.warn { background: var(--warn); box-shadow: 0 0 10px var(--warn-glow); }
+  .stat-dot.bad  { background: var(--bad);  box-shadow: 0 0 10px var(--bad-glow); }
+  .stat-dot.checking::after {
+    content: ''; position: absolute; inset: -4px;
+    border-radius: 50%; border: 1px solid currentColor;
+    color: var(--amber);
+    animation: ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    opacity: 0;
+  }
+  @keyframes ping {
+    0% { transform: scale(0.6); opacity: 0.8; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .stat .label {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .stat-dot.ok + .label   { color: var(--ok); }
+  .stat-dot.warn + .label { color: var(--warn); }
+  .stat-dot.bad + .label  { color: var(--bad); }
+
+  .svc .row2 {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px dashed var(--mauve-soft);
+  }
+  .svc .ms {
+    font-family: var(--f-mono); font-weight: 500;
+    font-size: 22px; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .svc .ms .u {
+    font-size: 11px; color: var(--ink-3); margin-left: 2px;
+    letter-spacing: 0.05em;
+  }
+  .svc .age {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .svc.bad-svc  { border-color: rgba(185,90,61,0.32); background: linear-gradient(180deg, var(--surface) 0%, var(--bad-soft) 100%); }
+  .svc.warn-svc { border-color: rgba(199,127,46,0.32); }
+
+  /* tiny sparkline */
+  .spark { display: flex; align-items: flex-end; gap: 2px; height: 18px; margin-top: 10px; }
+  .spark span {
+    width: 4px; background: var(--mauve);
+    border-radius: 1px;
+  }
+
+  /* ────────── DB details ────────── */
+  .db-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  @media (max-width: 900px) { .db-grid { grid-template-columns: 1fr; } }
+  .db {
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--mauve-soft);
+    border-radius: var(--r-lg);
+    box-shadow: 0 4px 14px rgba(31,28,48,0.04);
+  }
+  .db .head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--mauve-soft);
+  }
+  .db .head .name {
+    font-family: var(--f-sans); font-weight: 600; font-size: 16px;
+    color: var(--ink); display: flex; align-items: center; gap: 10px;
+  }
+  .db .row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 9px 0; font-family: var(--f-mono);
+    border-bottom: 1px dashed var(--mauve-soft);
+  }
+  .db .row:last-child { border-bottom: none; }
+  .db .row .k {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .db .row .v {
+    font-size: 13px; color: var(--ink); font-weight: 500;
+  }
+  .db .row .v em { font-style: normal; color: var(--ink-3); font-weight: 400; }
+
+  /* ────────── LLM chain ────────── */
+  .chain {
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--mauve-soft);
+    border-radius: var(--r-lg);
+    box-shadow: 0 4px 14px rgba(31,28,48,0.04);
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 20px;
+    align-items: center;
+  }
+  @media (max-width: 720px) { .chain { grid-template-columns: 1fr; }
+    .chain .arrow { transform: rotate(90deg); } }
+
+  .llm {
+    padding: 18px 20px;
+    background: var(--surface-2);
+    border: 1px solid var(--mauve-soft);
+    border-radius: var(--r-md);
+  }
+  .llm.active {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-soft);
+  }
+  .llm .tier {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 6px;
+  }
+  .llm .name {
+    font-family: var(--f-sans); font-weight: 600; font-size: 18px;
+    color: var(--ink); letter-spacing: -0.01em; margin-bottom: 12px;
+  }
+  .llm .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--f-mono); font-size: 11px;
+    padding: 4px 0;
+  }
+  .llm .row .k { color: var(--ink-3); letter-spacing: 0.1em; text-transform: uppercase; }
+  .llm .row .v { color: var(--ink); }
+  .chain .arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-3);
+  }
+  .chain .arrow svg { width: 100%; height: 24px; }
+  .chain .using {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    padding: 12px 16px;
+    background: var(--amber-soft);
+    border: 1px dashed var(--amber);
+    border-radius: var(--r-md);
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--iris-deep); text-align: center;
+  }
+  .chain .using strong { color: var(--canvas); background: var(--amber); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+
+  /* ────────── Error log ────────── */
+  .log {
+    background: var(--surface);
+    border: 1px solid var(--mauve-soft);
+    border-radius: var(--r-lg);
+    box-shadow: 0 4px 14px rgba(31,28,48,0.04);
+    overflow: hidden;
+  }
+  .log .empty {
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--ok);
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .log .empty .pin {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok); box-shadow: 0 0 10px var(--ok-glow);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .err {
+    display: grid;
+    grid-template-columns: 140px 160px 1fr;
+    gap: 20px; align-items: baseline;
+    padding: 12px 18px 12px 14px;
+    border-bottom: 1px solid var(--mauve-soft);
+    border-left: 2px solid var(--bad);
+    transition: background 180ms ease;
+  }
+  .err:hover { background: var(--surface-2); }
+  .err:last-child { border-bottom: none; }
+  .err .when { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+  .err .svc-name { font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); letter-spacing: 0.06em; }
+  .err .msg { font-family: var(--f-sans); font-size: 13px; color: var(--ink-2); line-height: 1.5;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .err .msg strong { color: var(--bad); font-weight: 500; }
+  @media (max-width: 720px) {
+    .err { grid-template-columns: 1fr; gap: 6px; }
+  }
+
+  /* utility */
+  .num { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body data-mode="light">
+
+  <!-- ─────────── Admin chrome ─────────── -->
+  <div class="admin-chrome">
+    <div class="crumb">
+      <span class="brand"><span class="orb" aria-hidden="true"></span> tammy</span>
+      <span class="sep">/</span>
+      <span>admin</span>
+      <span class="sep">/</span>
+      <span class="here">system health</span>
+    </div>
+    <div class="who">
+      <div class="mode-toggle" role="group" aria-label="Color mode">
+        <button id="modeLight" aria-pressed="true" onclick="setMode('light')"><span class="swatch light"></span>light</button>
+        <button id="modePurple" aria-pressed="false" onclick="setMode('purple')"><span class="swatch purple"></span>purple</button>
+      </div>
+      <span>tamer · root</span>
+      <span class="avatar" aria-hidden="true">T</span>
+    </div>
+  </div>
+
+  <!-- ─────────── Page ─────────── -->
+  <main class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>System Health</h1>
+        <div class="ts">
+          <span class="dot" aria-hidden="true"></span>
+          last checked <span id="lastChecked" class="num">12 seconds ago</span>
+          <span style="opacity:0.5;">·</span>
+          uptime <span id="upDays" class="num">17d 04h 22m</span>
+        </div>
+      </div>
+      <button id="refreshBtn" class="refresh">
+        <span class="ring" aria-hidden="true">
+          <svg viewBox="0 0 22 22">
+            <circle class="track" cx="11" cy="11" r="9" />
+            <circle id="ringBar" class="bar" cx="11" cy="11" r="9" />
+          </svg>
+          <span class="count" id="ringCount">30</span>
+        </span>
+        <span>Refresh</span>
+      </button>
+    </div>
+
+    <!-- Status banner -->
+    <div id="banner" class="banner ok">
+      <div class="mark">✓</div>
+      <div>
+        <div class="label">overall</div>
+        <div class="title" id="bannerTitle">All systems operational</div>
+      </div>
+      <div class="uptime">
+        <div class="n num" id="bannerUptime">99.97%</div>
+        <div class="l">30-day uptime</div>
+      </div>
+    </div>
+
+    <!-- Service grid -->
+    <div class="section-h">
+      <h2>Services</h2>
+      <span class="h-meta">6 monitored · checked every 30s</span>
+    </div>
+    <div id="services" class="grid"></div>
+
+    <!-- Database -->
+    <div class="section-h">
+      <h2>Database stores</h2>
+      <span class="h-meta">live counters</span>
+    </div>
+    <div class="db-grid">
+      <div class="db">
+        <div class="head">
+          <div class="name">
+            <span class="stat-dot ok" aria-hidden="true"></span>
+            MongoDB Atlas
+          </div>
+          <span class="h-meta">Primary DB</span>
+        </div>
+        <div class="row"><span class="k">Connection</span><span class="v"><span class="num">98</span> open / <em>200 pool</em></span></div>
+        <div class="row"><span class="k">Collections</span><span class="v num">11</span></div>
+        <div class="row"><span class="k">Documents</span><span class="v num">2,841,290</span></div>
+        <div class="row"><span class="k">Storage</span><span class="v"><span class="num">38.4</span> GB <em>/ 50 GB</em></span></div>
+        <div class="row"><span class="k">Slowest query (1h)</span><span class="v"><span class="num">412</span>ms <em>· sessions.aggregate</em></span></div>
+      </div>
+      <div class="db">
+        <div class="head">
+          <div class="name">
+            <span class="stat-dot ok" aria-hidden="true"></span>
+            Pinecone
+          </div>
+          <span class="h-meta">Vector memory</span>
+        </div>
+        <div class="row"><span class="k">tammy-memories</span><span class="v"><span class="num">2,841</span> vectors <em>· upsert 4m ago</em></span></div>
+        <div class="row"><span class="k">tammy-books</span><span class="v"><span class="num">2,592</span> vectors</span></div>
+        <div class="row"><span class="k">Index dim</span><span class="v num">1536</span></div>
+        <div class="row"><span class="k">Query latency (avg)</span><span class="v"><span class="num">88</span>ms</span></div>
+        <div class="row"><span class="k">Top-K p95</span><span class="v"><span class="num">142</span>ms</span></div>
+      </div>
+    </div>
+
+    <!-- LLM chain -->
+    <div class="section-h">
+      <h2>LLM fallback chain</h2>
+      <span class="h-meta" id="chainBadge">primary active</span>
+    </div>
+    <div class="chain">
+      <div class="llm active" id="llmPrimary">
+        <div class="tier">primary</div>
+        <div class="name">Anthropic · Claude Sonnet 4</div>
+        <div class="row"><span class="k">status</span>
+          <span class="v" style="display:inline-flex;align-items:center;gap:8px;">
+            <span class="stat-dot ok"></span><span class="num">186</span>ms
+          </span>
+        </div>
+        <div class="row"><span class="k">requests · 1h</span><span class="v num">4,218</span></div>
+        <div class="row"><span class="k">rate limit</span><span class="v"><span class="num">42</span>% used</span></div>
+      </div>
+
+      <div class="arrow" aria-hidden="true">
+        <svg viewBox="0 0 60 24" fill="none">
+          <path d="M2 12 L52 12 M44 6 L52 12 L44 18" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <div class="llm" id="llmFallback">
+        <div class="tier">fallback</div>
+        <div class="name">OpenAI · GPT-4o-mini</div>
+        <div class="row"><span class="k">status</span>
+          <span class="v" style="display:inline-flex;align-items:center;gap:8px;">
+            <span class="stat-dot ok"></span><span class="num">142</span>ms
+          </span>
+        </div>
+        <div class="row"><span class="k">requests · 1h</span><span class="v num">0</span></div>
+        <div class="row"><span class="k">last triggered</span><span class="v"><em>3d 14h ago</em></span></div>
+      </div>
+
+      <div class="using" id="chainUsing">
+        currently routing through <strong>primary</strong> · fallback healthy and ready
+      </div>
+    </div>
+
+    <!-- Error log -->
+    <div class="section-h">
+      <h2>Recent errors</h2>
+      <span class="h-meta">last 24 h</span>
+    </div>
+    <div id="errorLog" class="log"></div>
+
+  </main>
+
+<script>
+  // ────────── Service catalogue ──────────
+  const SERVICES = [
+    { id: 'anth',  name: 'Anthropic Claude',  provider: 'Primary LLM',                base: 180 },
+    { id: 'oai',   name: 'OpenAI',            provider: 'Fallback LLM · TTS · embeddings', base: 142 },
+    { id: 'mongo', name: 'MongoDB Atlas',     provider: 'Primary database',           base: 24 },
+    { id: 'pine',  name: 'Pinecone',          provider: 'Vector memory',              base: 88 },
+    { id: 'redis', name: 'Redis Cloud',       provider: 'Short-term cache',           base: 4 },
+    { id: 'spch',  name: 'Speechmatics',      provider: 'Voice STT',                  base: 310 },
+  ];
+
+  // Initial mock errors (rotated on refresh occasionally)
+  const ERROR_POOL = [
+    { svc: 'speechmatics', msg: 'Timeout after 30s · <strong>language detect failed</strong> for ar-JO audio' },
+    { svc: 'pinecone',     msg: '<strong>429 rate-limited</strong> · query latency spiked to 2.8s · auto-backoff' },
+    { svc: 'openai',       msg: 'Embedding request <strong>503</strong> · retried 2× · succeeded' },
+    { svc: 'anthropic',    msg: 'Stream interrupted at token 1247 · client reconnected' },
+    { svc: 'mongo',        msg: 'Aggregation pipeline <strong>slow query</strong> · 1.2s on conversations' },
+  ];
+
+  let renderState = { errors: ERROR_POOL.slice(0, 3) }; // 3 errors by default
+
+  // ────────── Rendering ──────────
+  function render() {
+    renderServices();
+    renderErrors();
+    updateBanner();
+  }
+
+  function renderServices() {
+    const g = document.getElementById('services');
+    g.innerHTML = SERVICES.map(s => {
+      const ms = jitter(s.base);
+      const status = s.id === 'speechmatics-x' ? 'bad'
+                   : (s.id === 'speechmatics' && Math.random() < 0.0) ? 'warn'
+                   : (ms > s.base * 2.4) ? 'warn'
+                   : 'ok';
+      const label = status === 'ok' ? 'operational' : status === 'warn' ? 'degraded' : 'down';
+      const age = jitter(14, 2) + 's ago';
+
+      // sparkline (12 bars)
+      const bars = Array.from({ length: 12 }, () => {
+        const h = 30 + Math.random() * 70;
+        return `<span style="height:${h}%; background:${status === 'ok' ? 'var(--ok)' : status === 'warn' ? 'var(--warn)' : 'var(--bad)'}; opacity:${0.4 + Math.random()*0.5};"></span>`;
+      }).join('');
+
+      return `
+        <div class="svc ${status === 'bad' ? 'bad-svc' : status === 'warn' ? 'warn-svc' : ''}">
+          <div class="row1">
+            <div>
+              <div class="name">${s.name}</div>
+              <div class="provider">${s.provider}</div>
+            </div>
+            <div class="stat">
+              <span class="stat-dot ${status} checking" aria-hidden="true"></span>
+              <span class="label">${label}</span>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="ms num">${ms}<span class="u">ms</span></div>
+            <div class="age">${age}</div>
+          </div>
+          <div class="spark" aria-hidden="true">${bars}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderErrors() {
+    const log = document.getElementById('errorLog');
+    if (renderState.errors.length === 0) {
+      log.innerHTML = `<div class="empty"><span class="pin"></span>no errors in the last 24 hours</div>`;
+      return;
+    }
+    const HOURS = [['02:14:33', '4h ago'], ['05:47:12', '6h ago'], ['09:21:08', '11h ago'], ['14:55:29', '17h ago'], ['18:02:44', '22h ago']];
+    log.innerHTML = renderState.errors.map((e, i) => `
+      <div class="err">
+        <span class="when">${HOURS[i % HOURS.length][0]} · ${HOURS[i % HOURS.length][1]}</span>
+        <span class="svc-name">${e.svc}</span>
+        <span class="msg">${e.msg}</span>
+      </div>
+    `).join('');
+  }
+
+  function updateBanner() {
+    // Read the rendered svcs to count any non-ok
+    const svcs = document.querySelectorAll('#services .svc');
+    let bad = 0, warn = 0;
+    svcs.forEach(c => {
+      const dot = c.querySelector('.stat-dot');
+      if (dot.classList.contains('bad'))  bad++;
+      if (dot.classList.contains('warn')) warn++;
+    });
+    const banner = document.getElementById('banner');
+    const title = document.getElementById('bannerTitle');
+    const mark = banner.querySelector('.mark');
+    banner.classList.remove('ok', 'degraded', 'critical');
+    if (bad > 0) {
+      banner.classList.add('critical');
+      title.innerHTML = `Critical — <em>${bad}</em> service${bad>1?'s':''} down · immediate attention`;
+      mark.textContent = '!';
+    } else if (warn > 0) {
+      banner.classList.add('degraded');
+      title.innerHTML = `Degraded — <em>${warn}</em> service${warn>1?'s':''} need attention`;
+      mark.textContent = '~';
+    } else {
+      banner.classList.add('ok');
+      title.textContent = 'All systems operational';
+      mark.textContent = '✓';
+    }
+  }
+
+  function jitter(base, spread) {
+    spread = spread ?? Math.max(8, base * 0.18);
+    return Math.max(1, Math.round(base + (Math.random() * 2 - 1) * spread));
+  }
+
+  // ────────── Refresh tick ──────────
+  const REFRESH_MS = 30000;
+  let nextTick = Date.now() + REFRESH_MS;
+  let lastCheckedTs = Date.now();
+  const RING_C = 2 * Math.PI * 9; // circumference for r=9
+  const ringBar = document.getElementById('ringBar');
+  const ringCount = document.getElementById('ringCount');
+
+  function tick() {
+    const now = Date.now();
+    const remaining = Math.max(0, nextTick - now);
+    const remSec = Math.ceil(remaining / 1000);
+    ringCount.textContent = remSec;
+    // Bar drains from 0 to RING_C
+    ringBar.style.strokeDashoffset = (1 - remaining / REFRESH_MS) * RING_C;
+
+    // last checked age
+    const ageSec = Math.floor((now - lastCheckedTs) / 1000);
+    document.getElementById('lastChecked').textContent = ageSec < 60
+      ? `${ageSec} second${ageSec === 1 ? '' : 's'} ago`
+      : `${Math.floor(ageSec / 60)} minute${Math.floor(ageSec/60) === 1 ? '' : 's'} ago`;
+
+    if (remaining <= 0) doRefresh();
+  }
+  setInterval(tick, 250);
+
+  function doRefresh() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('busy');
+    setTimeout(() => {
+      // Occasionally rotate the error pool to give a sense of "live"
+      if (Math.random() < 0.4) {
+        const idx = Math.floor(Math.random() * ERROR_POOL.length);
+        renderState.errors = [ERROR_POOL[idx], ...renderState.errors].slice(0, 5);
+      }
+      render();
+      lastCheckedTs = Date.now();
+      nextTick = lastCheckedTs + REFRESH_MS;
+      btn.classList.remove('busy');
+    }, 600);
+  }
+  document.getElementById('refreshBtn').addEventListener('click', () => { nextTick = Date.now(); });
+
+  // Initial render
+  render();
+
+  // ────────── Mode toggle (light / purple) ──────────
+  function setMode(m) {
+    document.body.setAttribute('data-mode', m);
+    try { localStorage.setItem('tammy-admin-mode', m); } catch(_){}
+    document.getElementById('modeLight').setAttribute('aria-pressed', m === 'light' ? 'true' : 'false');
+    document.getElementById('modePurple').setAttribute('aria-pressed', m === 'purple' ? 'true' : 'false');
+  }
+  try {
+    const saved = localStorage.getItem('tammy-admin-mode');
+    if (saved === 'purple') setMode('purple');
+  } catch(_) {}
+</script>
+</body>
+</html>

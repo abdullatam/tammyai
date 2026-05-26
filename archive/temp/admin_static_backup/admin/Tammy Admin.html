@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tammy · Admin</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="admin/styles.css" />
+
+  <!-- Apply persisted theme before paint -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('tammy_admin_palette') || 'purple';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="admin/data.js"></script>
+  <script type="text/babel" src="admin/components.jsx"></script>
+  <script type="text/babel" src="admin/pages-1.jsx"></script>
+  <script type="text/babel" src="admin/pages-2.jsx"></script>
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect } = React;
+
+    const PAGES = {
+      overview: window.OverviewPage,
+      prompt: window.PromptPage,
+      rag: window.RAGPage,
+      users: window.UsersPage,
+      test: window.TestPage,
+      settings: window.SettingsPage,
+    };
+
+    const ThemeToggle = ({ value, onChange }) => (
+      <div style={{
+        position: 'fixed', top: 20, right: 24, zIndex: 200,
+        display: 'inline-flex', padding: 3,
+        background: 'var(--surface)', border: '1px solid var(--mauve)',
+        borderRadius: 999, gap: 2,
+        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+      }}>
+        {[
+          { k: 'light', l: 'light' },
+          { k: 'purple', l: 'purple' },
+        ].map(o => (
+          <button key={o.k} onClick={() => onChange(o.k)} style={{
+            padding: '6px 14px', fontSize: 11,
+            fontFamily: 'var(--f-sans)', fontWeight: 500,
+            letterSpacing: '0.04em',
+            border: 'none', cursor: 'pointer',
+            borderRadius: 999,
+            background: value === o.k ? 'var(--purple)' : 'transparent',
+            color: value === o.k ? '#FFFFFF' : 'var(--ink-2)',
+            transition: 'all 160ms ease',
+          }}>{o.l}</button>
+        ))}
+      </div>
+    );
+
+    const App = () => {
+      const [page, setPage] = useState('overview');
+      const [theme, setTheme] = useState(() => {
+        try { return localStorage.getItem('tammy_admin_palette') || 'purple'; }
+        catch (e) { return 'purple'; }
+      });
+
+      useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('tammy_admin_palette', theme); } catch (e) {}
+      }, [theme]);
+
+      const Page = PAGES[page] || (() => <div style={{ padding: 40 }}>Loading…</div>);
+      return (
+        <div data-screen-label={`Admin · ${page}`}>
+          <Sidebar active={page} onSelect={setPage} admin={window.AdminData.meta.admin} />
+          <ThemeToggle value={theme} onChange={setTheme} />
+          <main key={page} style={{ marginLeft: 110, padding: '32px 40px 60px', maxWidth: 1480 }}>
+            <Page />
+          </main>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

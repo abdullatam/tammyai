@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tammy AI — the sharp friend who tells the truth.</title>
+<link rel="icon" type="image/png" href="/static/public/tammy_logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/static/public/styles.css" />
+<style>
+@keyframes orb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes orb-breathe-bg { 0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes tammy-orb-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes tammy-ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes tammy-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+  40% { opacity: 1; transform: scale(1); }
+}
+@keyframes tammy-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+#tammy-boot {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background:
+    radial-gradient(800px 600px at 50% 38%, rgba(148, 125, 237, 0.18), transparent 60%),
+    linear-gradient(180deg, #FFFFFF 0%, #F6F3FF 100%);
+  z-index: 9999;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  transition: opacity 480ms ease;
+}
+#tammy-boot.fading, #tammy-boot.gone { opacity: 0; pointer-events: none; }
+
+html[data-theme="purple"] #tammy-boot {
+  background:
+    radial-gradient(800px 600px at 50% 38%, rgba(192, 172, 255, 0.20), transparent 60%),
+    linear-gradient(180deg, #1F1C30 0%, #262339 100%);
+}
+html[data-theme="purple"] .tb-word { color: #FFFFFF; }
+html[data-theme="purple"] .tb-word em { color: #C0ACFF; }
+html[data-theme="purple"] .tb-sub { color: rgba(255, 255, 255, 0.65); }
+html[data-theme="purple"] .tb-orb {
+  background: radial-gradient(circle at 32% 30%, #E0D4FF 0%, #C0ACFF 55%, #947DED 100%);
+  box-shadow:
+    inset 0 -16px 28px rgba(0, 0, 0, 0.35),
+    inset 0 16px 24px rgba(255, 255, 255, 0.25),
+    0 18px 48px rgba(192, 172, 255, 0.42);
+}
+html[data-theme="purple"] .tb-orb-glow {
+  background: radial-gradient(circle, rgba(192, 172, 255, 0.42), transparent 65%);
+}
+html[data-theme="purple"] .tb-ring { border-color: rgba(192, 172, 255, 0.55); }
+html[data-theme="purple"] .tb-ring.tb-ring-2 { border-color: rgba(192, 172, 255, 0.30); }
+html[data-theme="purple"] .tb-dots span { background: #C0ACFF; }
+.tb-orb-wrap {
+  position: relative;
+  width: 132px; height: 132px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tb-orb-glow {
+  position: absolute; inset: -28px;
+  background: radial-gradient(circle, rgba(148, 125, 237, 0.32), transparent 65%);
+  filter: blur(8px);
+  animation: tammy-orb-pulse 2400ms ease-in-out infinite;
+}
+.tb-orb {
+  width: 92px; height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #C0ACFF 0%, #947DED 55%, #6B5BC8 100%);
+  box-shadow:
+    inset 0 -16px 28px rgba(31, 28, 48, 0.22),
+    inset 0 16px 24px rgba(255, 255, 255, 0.30),
+    0 18px 48px rgba(148, 125, 237, 0.32);
+  animation: tammy-orb-pulse 2400ms ease-in-out infinite;
+  position: relative;
+}
+.tb-orb::before {
+  content: ''; position: absolute;
+  top: 14%; left: 22%; width: 26%; height: 18%;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+.tb-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(148, 125, 237, 0.45);
+  animation: tammy-ring-spin 9s linear infinite;
+}
+.tb-ring.tb-ring-2 {
+  inset: -16px;
+  border-style: dotted;
+  border-color: rgba(148, 125, 237, 0.25);
+  animation-direction: reverse;
+  animation-duration: 16s;
+}
+.tb-word {
+  margin-top: 36px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: #1F1C30;
+  animation: tammy-fade 600ms ease both;
+}
+.tb-word em {
+  font-style: italic;
+  font-weight: 400;
+  color: #947DED;
+}
+.tb-sub {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #3E3D40;
+  opacity: 0.7;
+  letter-spacing: 0.005em;
+  animation: tammy-fade 700ms 120ms ease both;
+}
+.tb-dots {
+  display: inline-flex; gap: 5px;
+  margin-left: 6px;
+  vertical-align: baseline;
+}
+.tb-dots span {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: #947DED;
+  animation: tammy-dot 1400ms ease-in-out infinite;
+}
+.tb-dots span:nth-child(2) { animation-delay: 180ms; }
+.tb-dots span:nth-child(3) { animation-delay: 360ms; }
+</style>
+</head>
+<body>
+<script>
+  // Apply persisted theme to <html> as early as possible so boot splash matches.
+  (function () {
+    try {
+      var t = localStorage.getItem('tammy_palette') || 'white';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<div id="tammy-boot">
+  <div class="tb-orb-wrap">
+    <div class="tb-ring tb-ring-2"></div>
+    <div class="tb-ring"></div>
+    <div class="tb-orb-glow"></div>
+    <div class="tb-orb"></div>
+  </div>
+  <div class="tb-word">tammy<span style="opacity:.4">.</span></div>
+  <div class="tb-sub">she remembers everything</div>
+</div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="/static/data/tammy_data.js"></script>
+<script type="text/babel" src="/tammy/components/Orb.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/components/Nav.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/components/Tweaks.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/components/TammyLoading.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/components/Buckets.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Chat.jsx?v=14"></script>
+<script type="text/babel" src="/tammy/pages/Today.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Arc.jsx?v=8"></script>
+<script type="text/babel" src="/tammy/pages/Memory.jsx?v=4"></script>
+<script type="text/babel" src="/tammy/pages/Settings.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Profile.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/VoiceMode.jsx?v=11"></script>
+<script type="text/babel" src="/tammy/pages/_extra_shared.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/DNA.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/BlindSpots.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Calibration.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Mirror.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Decisions.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Projects.jsx?v=4"></script>
+<script type="text/babel" src="/tammy/pages/Network.jsx?v=8"></script>
+<script type="text/babel" src="/tammy/pages/DirectMessage.jsx?v=1"></script>
+<script type="text/babel" src="/tammy/pages/Calendar.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Locked.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Landing.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/pages/Onboarding.jsx?v=3"></script>
+<script type="text/babel" src="/tammy/components/NotificationBell.jsx?v=2"></script>
+<script type="text/babel" src="/tammy/pages/Notifications.jsx?v=1"></script>
+
+<script type="text/babel">
+// Pull all screen + component classes from the global window scope.
+// Each .jsx file registers itself via `window.XScreen = XScreen` because Babel
+// Standalone doesn't share top-level const declarations across script tags.
+const {
+  Nav, TweaksPanel, NotificationBell,
+  ChatScreen, TodayScreen, ArcScreen,
+  DNAScreen, BlindSpotsScreen, CalibrationScreen, MirrorScreen,
+  DecisionsScreen, ProjectsScreen, NetworkScreen,
+  DirectMessageScreen,
+  CalendarScreen,
+  NotificationsScreen,
+  MemoryScreen, SettingsScreen, ProfileScreen,
+  Landing, OnboardingScreen, VoiceMode,
+  LockedDNA, LockedMirror, LockedBlindSpots, LockedCalibration, LockedArc
+} = window;
+
+/*EDITMODE-BEGIN*/
+const TWEAK_DEFAULTS = {
+  "chatLayout": "prose",
+  "navVisible": true,
+  "orbPreview": "idle",
+  "palette": "white"
+};
+/*EDITMODE-END*/
+
+const PALETTES = {
+  white: {
+    '--canvas': '#FFFFFF', '--canvas-tint': '#F6F3FF', '--surface': '#FFFFFF', '--surface-2': '#F0EAFF',
+    '--ink': '#1F1C30',
+    '--ink-2': '#3E3D40', '--ink-3': 'rgba(31, 28, 48, 0.55)',
+    '--mauve': 'rgba(31, 28, 48, 0.18)', '--mauve-soft': 'rgba(31, 28, 48, 0.07)',
+    '--amber': '#947DED', '--amber-hi': '#C0ACFF', '--amber-soft': 'rgba(148, 125, 237, 0.14)', '--amber-glow': 'rgba(148, 125, 237, 0.38)',
+  },
+  purple: {
+    '--canvas': '#1F1C30', '--canvas-tint': '#262339', '--surface': '#2A2740', '--surface-2': '#332F4A',
+    '--ink': '#FFFFFF',
+    '--ink-2': 'rgba(255, 255, 255, 0.80)', '--ink-3': 'rgba(255, 255, 255, 0.58)',
+    '--mauve': 'rgba(255, 255, 255, 0.20)', '--mauve-soft': 'rgba(255, 255, 255, 0.08)',
+    '--amber': '#C0ACFF', '--amber-hi': '#947DED', '--amber-soft': 'rgba(192, 172, 255, 0.18)', '--amber-glow': 'rgba(192, 172, 255, 0.45)',
+  },
+};
+
+const ThemeToggle = ({ value, onChange }) => (
+  <button onClick={() => onChange(value === 'light' ? 'purple' : 'light')} style={{
+    position: 'fixed', top: 20, right: 24, zIndex: 9999,
+    background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 99,
+    padding: '6px 12px', fontSize: 12, fontFamily: 'var(--f-sans)', color: 'var(--ink-2)',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+    boxShadow: 'var(--shadow-sm)'
+  }}>
+    <div style={{ width: 10, height: 10, borderRadius: '50%', background: value === 'light' ? '#E2E8F0' : '#C0ACFF' }} />
+    {value === 'light' ? 'Light' : 'Purple'}
+  </button>
+);
+
+const App = () => {
+  // Route: '_loading' | 'landing' | 'onboarding' | 'today' | 'chat' | 'arc' | 'memory' | 'settings' | 'voice' | 'profile'
+  const [route, setRoute] = React.useState('_loading');
+  const [tweaks, setTweaks] = React.useState(() => {
+    try {
+      const savedPalette = localStorage.getItem('tammy_palette');
+      return savedPalette ? { ...TWEAK_DEFAULTS, palette: savedPalette } : TWEAK_DEFAULTS;
+    } catch (e) { return TWEAK_DEFAULTS; }
+  });
+  const [tweaksOn, setTweaksOn] = React.useState(false);
+  const [activeBucket, setActiveBucket] = React.useState('b_tammy');
+
+  const _hideBoot = () => {
+    const el = document.getElementById('tammy-boot');
+    if (!el) return;
+    el.classList.add('fading');
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 420);
+  };
+
+  React.useEffect(() => {
+    const VALID = ['today','chat','arc','memory','settings','voice','profile','projects','decisions','dna','blindspots','calibration','mirror','network','calendar','dm'];
+
+    // Restore cached data instantly so returning users see content immediately
+    try {
+      const cached = localStorage.getItem('tammy_data_cache');
+      if (cached) { Object.assign(window.TammyData, JSON.parse(cached)); window.dispatchEvent(new Event('tammy:dataready')); }
+    } catch (_) {}
+
+    // Hard 2-second timeout — never block longer than this
+    const hardTimeout = setTimeout(() => {
+      const urlPath = window.location.pathname.replace(/^\/+/, '');
+      const saved = localStorage.getItem('tammy_last_route');
+      let fallbackDest = 'today';
+      if (urlPath === '') fallbackDest = 'landing';
+      else if (VALID.includes(urlPath)) fallbackDest = urlPath;
+      else if (VALID.includes(saved)) fallbackDest = saved;
+      
+      setRoute(fallbackDest);
+      if (fallbackDest === 'landing') window.history.replaceState(null, '', '/landing');
+      _hideBoot();
+    }, 2000);
+
+    window.TammyCheckAuth().then(({ auth, onboarding_complete }) => {
+      clearTimeout(hardTimeout);
+      if (!auth) {
+        localStorage.removeItem('tammy_last_route');
+        setRoute('landing');
+        window.history.replaceState(null, '', '/landing');
+        _hideBoot();
+      } else {
+        // Fire bootstrap in background — never await before rendering
+        window.TammyBootstrap();
+        const urlPath = window.location.pathname.replace(/^\/+/, '');
+        const saved   = localStorage.getItem('tammy_last_route');
+        let dest;
+        if (urlPath === '') {
+          dest = 'landing';
+        } else if (VALID.includes(urlPath)) {
+          dest = urlPath;
+        } else if (VALID.includes(saved)) {
+          dest = saved;
+        } else {
+          dest = onboarding_complete ? 'today' : 'onboarding';
+        }
+        setRoute(dest);
+        window.history.replaceState(null, '', '/' + dest);
+        _hideBoot();
+      }
+    });
+    return () => clearTimeout(hardTimeout);
+  }, []);
+
+  // Listen for browser back/forward navigation
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\/+/, '');
+      const validRoutes = ['landing', 'onboarding', 'today', 'chat', 'arc', 'memory', 'settings', 'voice', 'profile', 'projects', 'decisions', 'dna', 'blindspots', 'calibration', 'mirror', 'network', 'calendar', 'dm'];
+      if (validRoutes.includes(path)) {
+        setRoute(path);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Apply palette by writing CSS vars on :root + persist for next boot
+  React.useEffect(() => {
+    const p = PALETTES[tweaks.palette] || PALETTES.white;
+    Object.entries(p).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    document.documentElement.setAttribute('data-theme', tweaks.palette);
+    try { localStorage.setItem('tammy_palette', tweaks.palette); } catch (e) {}
+  }, [tweaks.palette]);
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOn(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOn(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweaks = (next) => {
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+  };
+
+  const go = (r, opts) => {
+    // Bug 14: persist route so refresh lands on same screen
+    if (r !== 'landing' && r !== 'onboarding') localStorage.setItem('tammy_last_route', r);
+    setRoute(r);
+    window.history.pushState(null, '', '/' + r);
+  };
+  // Expose for programmatic navigation from components (e.g. Tammy Connect buttons)
+  window.TammyNavigate = go;
+
+  // While auth check is in-flight, the static #tammy-boot HTML is visible — return null here
+  if (route === '_loading') return null;
+
+  const getScreen = () => {
+    if (route === 'landing') return <Landing onNavigate={go} />;
+    if (route === 'onboarding') return <OnboardingScreen onDone={() => go('today')} />;
+    if (route === 'voice') return <VoiceMode onExit={() => {
+      // Bug 9: when voice ends, make chat resume the same session
+      if (window.TammyData?.pendingVoiceSessionId) {
+        window.TammyData.pendingChatId = window.TammyData.pendingVoiceSessionId;
+      }
+      go('chat');
+    }} />;
+
+    return (
+      <>
+        {tweaks.navVisible && <Nav active={route} onNavigate={go} userInitial={window.TammyData?.user?.initial || '?'} />}
+        {
+          route === 'today' ? <TodayScreen onNavigate={go} activeBucket={activeBucket} setActiveBucket={setActiveBucket} tweaks={tweaks} updateTweaks={updateTweaks} /> :
+          route === 'chat' ? <ChatScreen layout={tweaks.chatLayout} onOpenVoice={() => setRoute('voice')} activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+          route === 'arc' ? <ArcScreen activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+          route === 'dna' ? <DNAScreen /> :
+          route === 'blindspots' ? <BlindSpotsScreen /> :
+          route === 'calibration' ? <CalibrationScreen /> :
+          route === 'mirror' ? <MirrorScreen /> :
+          route === 'decisions' ? <DecisionsScreen /> :
+          route === 'projects' ? <ProjectsScreen /> :
+          route === 'network' ? <NetworkScreen /> :
+          route === 'dm' ? <DirectMessageScreen /> :
+          route === 'calendar' ? <CalendarScreen /> :
+          route === 'memory' ? <MemoryScreen /> :
+          route === 'settings' ? <SettingsScreen onNavigate={go} /> :
+          route === 'profile' ? <ProfileScreen onNavigate={go} /> :
+          route === 'notifications' ? <NotificationsScreen /> :
+          <TodayScreen onNavigate={go} activeBucket={activeBucket} setActiveBucket={setActiveBucket} tweaks={tweaks} updateTweaks={updateTweaks} />
+        }
+      </>
+    );
+  };
+
+  const showChrome = route !== 'landing' && route !== 'onboarding' && route !== '_loading' && route !== 'voice';
+
+  return (
+    <>
+      {route !== 'voice' && <ThemeToggle value={tweaks.palette} onChange={(v) => updateTweaks({ ...tweaks, palette: v })} />}
+      {showChrome && <NotificationBell />}
+      {getScreen()}
+      <TweaksPanel tweaks={tweaks} setTweaks={updateTweaks} visible={tweaksOn} />
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

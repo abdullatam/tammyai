@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tammy AI — control center for the truth.</title>
+  <link rel="icon" type="image/png" href="/static/public/tammy_logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/static/public/admin_styles.css" />
+
+  <!-- Apply persisted theme before paint -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('tammy_admin_palette') || 'purple';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    /* ── Login page styles ─────────────────────────────────────────────── */
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-wrapper::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(148,125,237,0.15) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: login-glow 6s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes login-glow {
+      0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    }
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 48px 40px 40px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 60px rgba(148,125,237,0.08);
+      animation: login-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes login-enter {
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .login-orb {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #947DED 0%, #6C5CE7 50%, #4A3ABA 100%);
+      margin: 0 auto 28px;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(108,92,231,0.35);
+    }
+    .login-orb::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      top: 10px; left: 14px;
+      filter: blur(4px);
+    }
+    .login-title {
+      font-family: 'IBM Plex Serif', Georgia, serif;
+      font-size: 24px;
+      font-weight: 400;
+      text-align: center;
+      color: var(--ink);
+      margin: 0 0 6px;
+    }
+    .login-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--ink-3);
+      text-align: center;
+      margin: 0 0 32px;
+    }
+    .login-field {
+      margin-bottom: 16px;
+    }
+    .login-label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-4);
+      margin-bottom: 6px;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 200ms, box-shadow 200ms;
+      box-sizing: border-box;
+    }
+    .login-input:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(148,125,237,0.15);
+    }
+    .login-input::placeholder {
+      color: var(--ink-4);
+    }
+    .login-btn {
+      width: 100%;
+      padding: 14px 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #FFF;
+      background: linear-gradient(135deg, #947DED, #6C5CE7);
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 200ms;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .login-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(108,92,231,0.35);
+    }
+    .login-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .login-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .login-error {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--danger);
+      text-align: center;
+      animation: login-shake 0.4s ease;
+    }
+    @keyframes login-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .login-footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--ink-4);
+      letter-spacing: 0.04em;
+    }
+    .login-spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #FFF;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .login-fade-out {
+      animation: login-fade 0.3s ease forwards;
+    }
+    @keyframes login-fade {
+      to { opacity: 0; transform: scale(0.98); }
+    }
+    .dashboard-fade-in {
+      animation: dash-in 0.4s ease both;
+      animation-delay: 0.15s;
+    }
+    @keyframes dash-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Orb Loading Screen CSS */
+    @keyframes tammy-orb-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.95; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    @keyframes tammy-ring-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes tammy-fade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    #tammy-boot {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100vh;
+      background: var(--bg);
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    }
+
+    .tb-word { color: var(--ink); }
+    .tb-sub { color: var(--ink-3); }
+    .tb-orb {
+      background: radial-gradient(circle at 32% 30%, #C0ACFF 0%, #947DED 55%, #6B5BC8 100%);
+      box-shadow:
+        inset 0 -16px 28px rgba(31, 28, 48, 0.22),
+        inset 0 16px 24px rgba(255, 255, 255, 0.30),
+        0 18px 48px rgba(148, 125, 237, 0.32);
+    }
+    .tb-orb-glow {
+      background: radial-gradient(circle, rgba(148, 125, 237, 0.32), transparent 65%);
+    }
+    .tb-ring { border-color: rgba(148, 125, 237, 0.45); }
+    .tb-ring.tb-ring-2 { border-color: rgba(148, 125, 237, 0.25); }
+
+    html[data-theme="purple"] .tb-word { color: #FFFFFF; }
+    html[data-theme="purple"] .tb-sub { color: rgba(255, 255, 255, 0.65); }
+    html[data-theme="purple"] .tb-orb {
+      background: radial-gradient(circle at 32% 30%, #E0D4FF 0%, #C0ACFF 55%, #947DED 100%);
+      box-shadow:
+        inset 0 -16px 28px rgba(0, 0, 0, 0.35),
+        inset 0 16px 24px rgba(255, 255, 255, 0.25),
+        0 18px 48px rgba(192, 172, 255, 0.42);
+    }
+    html[data-theme="purple"] .tb-orb-glow {
+      background: radial-gradient(circle, rgba(192, 172, 255, 0.42), transparent 65%);
+    }
+    html[data-theme="purple"] .tb-ring { border-color: rgba(192, 172, 255, 0.55); }
+    html[data-theme="purple"] .tb-ring.tb-ring-2 { border-color: rgba(192, 172, 255, 0.30); }
+
+    .tb-orb-wrap {
+      position: relative;
+      width: 132px; height: 132px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tb-orb-glow {
+      position: absolute; inset: -28px;
+      filter: blur(8px);
+      animation: tammy-orb-pulse 2400ms ease-in-out infinite;
+    }
+    .tb-orb {
+      width: 92px; height: 92px;
+      border-radius: 50%;
+      position: relative;
+      animation: tammy-orb-pulse 2400ms ease-in-out infinite;
+    }
+    .tb-orb::before {
+      content: ''; position: absolute;
+      top: 14%; left: 22%; width: 26%; height: 18%;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 50%;
+      filter: blur(2px);
+    }
+    .tb-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 1.5px dashed;
+      animation: tammy-ring-spin 9s linear infinite;
+    }
+    .tb-ring.tb-ring-2 {
+      inset: -16px;
+      border-style: dotted;
+      animation-direction: reverse;
+      animation-duration: 16s;
+    }
+    .tb-word {
+      margin-top: 36px;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.012em;
+      animation: tammy-fade 600ms ease both;
+    }
+    .tb-sub {
+      margin-top: 10px;
+      font-size: 13px;
+      letter-spacing: 0.005em;
+      animation: tammy-fade 700ms 120ms ease both;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="/static/data/admin_data.js"></script>
+  <script type="text/babel" src="/admin-assets/components.jsx"></script>
+  <script type="text/babel" src="/admin-assets/OverviewPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/PromptPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/RAGPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/UsersPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/ConvosPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/TestPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/EQPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/HealthPage.jsx?v=2"></script>
+  <script type="text/babel" src="/admin-assets/SettingsPage.jsx"></script>
+  <script type="text/babel" src="/admin-assets/ProfilePage.jsx"></script>
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // ── Login Page ────────────────────────────────────────────────────────
+    const LoginPage = ({ onLogin }) => {
+      const [username, setUsername] = useState('admin');
+      const [password, setPassword] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+      const [checking, setChecking] = useState(true);
+      const inputRef = useRef(null);
+
+      // Auto-login with saved credentials on mount
+      useEffect(() => {
+        (async () => {
+          const ok = await window.AdminAuth.checkSession();
+          if (ok) {
+            onLogin();
+          } else {
+            setChecking(false);
+            setTimeout(() => inputRef.current?.focus(), 300);
+          }
+        })();
+      }, []);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!username.trim() || !password.trim() || loading) return;
+        setLoading(true);
+        setError('');
+
+        const ok = await window.AdminAuth.login(username.trim(), password.trim());
+        if (ok) {
+          onLogin();
+        } else {
+          setError('Invalid password. Please try again.');
+          setLoading(false);
+          setPassword('');
+          setTimeout(() => inputRef.current?.focus(), 100);
+        }
+      };
+
+      if (checking) {
+        return (
+          <div className="login-wrapper">
+            <div style={{ textAlign: 'center' }}>
+              <div className="login-orb" style={{ animation: 'pulse-glow 1.5s ease infinite' }} />
+              <div style={{ color: 'var(--ink-3)', fontSize: 13, marginTop: 16 }}>Checking session…</div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1.2fr 1fr', position: 'relative', background: 'var(--bg)' }}>
+          <div style={{ padding: '72px 80px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div className="serif" style={{ fontSize: 30, fontStyle: 'italic', letterSpacing: '-0.02em', color: 'var(--ink)' }}>tammy admin</div>
+            <div>
+              <h1 className="serif" style={{ fontSize: 80, lineHeight: 0.98, margin: '0 0 24px', fontWeight: 400, letterSpacing: '-0.02em', maxWidth: 720, textWrap: 'balance', color: 'var(--ink)' }}>
+                control center <br />for <span style={{ fontStyle: 'italic', color: 'var(--amber)' }}>the truth.</span>
+              </h1>
+              <p style={{ fontSize: 18, color: 'var(--ink-2)', maxWidth: 520, lineHeight: 1.55, margin: '0 0 36px' }}>
+                Manage users, monitor emotional threads, and configure the core intelligence engine.
+              </p>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+              Built in Amman · <span style={{ color: 'var(--amber)' }}>●</span> Private by default
+            </div>
+          </div>
+
+          <div style={{ position: 'relative', background: 'linear-gradient(135deg, var(--amber-soft), var(--mauve-soft))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="login-orb" style={{ transform: 'scale(5)' }} /> 
+            </div>
+            <div style={{ position: 'relative', zIndex: 2, width: 380, padding: 32, borderRadius: 24, background: 'color-mix(in srgb, var(--surface) 75%, transparent)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid var(--mauve)', boxShadow: 'var(--shadow-lg)' }}>
+              
+              <h1 className="login-title" style={{ textAlign: 'left', marginBottom: 24, fontSize: 28 }}>Sign In</h1>
+              
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>admin username</span>
+                  <input type="text" placeholder="admin" value={username} onChange={e => setUsername(e.target.value)} disabled={loading} style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid var(--line-strong)', background: 'var(--canvas)', color: 'var(--ink)', fontFamily: 'var(--f-sans)', fontSize: 14, outline: 'none', transition: 'border-color 200ms' }} />
+                </label>
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>admin password</span>
+                  <input type="password" placeholder="········" value={password} onChange={e => setPassword(e.target.value)} ref={inputRef} disabled={loading} style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid var(--line-strong)', background: 'var(--canvas)', color: 'var(--ink)', fontFamily: 'var(--f-sans)', fontSize: 14, outline: 'none', transition: 'border-color 200ms' }} />
+                </label>
+                
+                {error && (
+                  <div style={{ fontSize: 12, color: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 10%, transparent)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>{error}</div>
+                )}
+                
+                <button type="submit" className="login-btn" disabled={loading || !username.trim() || !password.trim()} style={{ justifyContent: 'center', padding: '14px 22px', marginTop: 8, opacity: loading ? 0.7 : 1 }}>
+                  {loading ? 'Authenticating…' : 'come in'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ── Dashboard Pages ───────────────────────────────────────────────────
+    const PAGES = {
+      overview: window.OverviewPage,
+      prompt: window.PromptPage,
+      rag: window.RAGPage,
+      users: window.UsersPage,
+      test: window.TestPage,
+      eq: window.EQPage,
+      health: window.HealthPage,
+      settings: window.SettingsPage,
+      profile: window.ProfilePage,
+    };
+
+    const ThemeToggle = ({ value, onChange }) => (
+      <button onClick={() => onChange(value === 'light' ? 'purple' : 'light')} style={{
+        position: 'fixed', top: 20, right: 24, zIndex: 200,
+        background: 'var(--surface)', border: '1px solid var(--mauve)', borderRadius: 99,
+        padding: '6px 14px', fontSize: 13, fontFamily: 'var(--f-sans)', color: 'var(--ink)', fontWeight: 400,
+        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+        boxShadow: '0 4px 14px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: value === 'light' ? '#E2E8F0' : '#C0ACFF', boxShadow: value === 'light' ? 'none' : '0 0 8px rgba(192, 172, 255, 0.4)' }} />
+        {value === 'light' ? 'Light' : 'Purple'}
+      </button>
+    );
+
+    // ── App Root ──────────────────────────────────────────────────────────
+    const App = () => {
+      const getPageFromUrl = () => {
+        const path = window.location.pathname;
+        if (path.startsWith('/admin/')) {
+          const p = path.split('/')[2];
+          return p && PAGES[p] ? p : 'overview';
+        }
+        return 'overview';
+      };
+
+      const [authed, setAuthed] = useState(false);
+      const [booted, setBooted] = useState(false);
+      const [page, setPage] = useState(getPageFromUrl);
+      const [theme, setTheme] = useState(() => {
+        try { return localStorage.getItem('tammy_admin_palette') || 'purple'; }
+        catch (e) { return 'purple'; }
+      });
+
+      // Handle back/forward buttons
+      useEffect(() => {
+        const handlePop = () => setPage(getPageFromUrl());
+        window.addEventListener('popstate', handlePop);
+        return () => window.removeEventListener('popstate', handlePop);
+      }, []);
+
+      const navigate = (newPage) => {
+        setPage(newPage);
+        const newPath = newPage === 'overview' ? '/admin' : `/admin/${newPage}`;
+        window.history.pushState({}, '', newPath);
+      };
+
+      // Listen for forced logout (401)
+      useEffect(() => {
+        window.AdminAuth._onAuthChange = (val) => {
+          if (!val) {
+            setAuthed(false);
+            setBooted(false);
+          }
+        };
+      }, []);
+
+      useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('tammy_admin_palette', theme); } catch (e) {}
+      }, [theme]);
+
+      const handleLogin = useCallback(async () => {
+        setAuthed(true);
+        // Bootstrap data in the background
+        await window.AdminBootstrap();
+        setBooted(true);
+      }, []);
+
+      const Page = PAGES[page] || (() => <div style={{ padding: 40 }}>Loading…</div>);
+      return (
+        <>
+          <ThemeToggle value={theme} onChange={setTheme} />
+          {!authed ? (
+            <LoginPage onLogin={handleLogin} />
+          ) : !booted ? (
+             <div id="tammy-boot">
+               <div className="tb-orb-wrap">
+                 <div className="tb-ring tb-ring-2"></div>
+                 <div className="tb-ring"></div>
+                 <div className="tb-orb-glow"></div>
+                 <div className="tb-orb"></div>
+               </div>
+               <div className="tb-word">tammy<span style={{ opacity: 0.4 }}>.</span></div>
+               <div className="tb-sub">she remembers everything</div>
+             </div>
+          ) : (
+            <div className="dashboard-fade-in" data-screen-label={`Admin · ${page}`}>
+              <Sidebar active={page} onSelect={navigate} admin={window.AdminData.meta.admin} />
+              <main key={page} style={{ marginLeft: 110, padding: '32px 40px 60px', maxWidth: 1480 }}>
+                <Page />
+              </main>
+            </div>
+          )}
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

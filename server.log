@@ -1,0 +1,78 @@
+Checking virtual environment...
+Virtual environment found. Activating...
+Starting Tammy AI...
+2026-05-26 14:43:30 | backend.db.redis_client | INFO | Initializing Redis client...
+2026-05-26 14:43:31 | backend.db.redis_client | INFO | ✅ Redis connected: redis-16474.c73.us-east-1-2.ec2.cloud.redislabs.com:16474
+2026-05-26 14:43:31 | backend.db.mongodb_client | INFO | Initializing MongoDB client...
+2026-05-26 14:43:33 | backend.db.mongodb_client | INFO | ✅ MongoDB connected
+/Users/abdullatamimi/Desktop/tammy/tammy/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-05-26 14:43:33 | backend.db.pinecone_manager | INFO | Initializing Pinecone Manager...
+2026-05-26 14:43:34 | backend.db.pinecone_manager | INFO | ✅ Pinecone connected: tammy-books + tammy-memories
+2026-05-26 14:43:34 | backend.db.pinecone_manager | INFO | ✅ Pinecone Manager ready
+/Users/abdullatamimi/Desktop/tammy/tammy/.venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:242: FutureWarning: You are using a non-supported Python version (3.9.6). Google will not post any further updates to google.api_core supporting this Python version. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/abdullatamimi/Desktop/tammy/tammy/.venv/lib/python3.9/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/abdullatamimi/Desktop/tammy/tammy/.venv/lib/python3.9/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/abdullatamimi/Documents/tammyV4/ai/core/llm_client.py:11: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+/Users/abdullatamimi/Documents/tammyV4/backend/server.py:100: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+2026-05-26 14:43:35 | __main__ | INFO | Starting Tammy V2 on port 7861
+2026-05-26 14:43:35 | ai.prompts.prompt_cache | INFO | seed_prompt_if_needed: versions already exist, skipping
+2026-05-26 14:47:43 | backend.services.cost_engine.realtime_aggregator | ERROR | CostEngine: failed to fetch live metrics from Redis: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:47:48 | backend.services.cost_engine.realtime_aggregator | ERROR | CostEngine: failed to fetch live metrics from Redis: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:49:32 | ai.core.tammy_core | INFO | [V2] user=6a0ea793644a58164674360c | q=still working on the admin account and the bugs in tammy...
+2026-05-26 14:49:32 | ai.core.tammy_core | INFO | [V2] type=general | sources=['redis', 'pinecone_memory']
+2026-05-26 14:49:32 | ai.core.tammy_core | INFO | ⚡ Memory fetch using max_workers=4 (voice_mode=False)
+2026-05-26 14:49:33 | backend.core_services.memory_manager | INFO | [MongoDB] user profile loaded (2 fields)
+2026-05-26 14:49:33 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:33 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Failed to enqueue telemetry: no running event loop
+2026-05-26 14:49:34 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:34 | backend.db.pinecone_manager | INFO | [Pinecone] user='6a0ea793644a58164674360c': 4 hits, 4 above threshold
+2026-05-26 14:49:34 | backend.core_services.memory_manager | INFO | [Pinecone] 4 semantic memories for user 6a0ea793644a58164674360c
+2026-05-26 14:49:34 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Failed to enqueue telemetry: no running event loop
+2026-05-26 14:49:35 | ai.core.tammy_core | INFO | ⏱️ Memory fetch: 2.28s
+2026-05-26 14:49:36 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:37 | ai.core.tammy_core | INFO | ⏱️ LLM: 1.97s | Total: 5.51s
+2026-05-26 14:49:39 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:41 | backend.core_services.memory_manager | INFO | ✅ Updated profile with 2 new facts for user 6a0ea793644a58164674360c
+2026-05-26 14:49:42 | backend.db.pinecone_manager | INFO | ✅ Upserted 2 memories for user 6a0ea793644a58164674360c in namespace='tammy-memories'
+2026-05-26 14:49:42 | backend.db.pinecone_manager | INFO | ✅ Upserted 1 memories for user 6a0ea793644a58164674360c in namespace='tammy-memories'
+2026-05-26 14:49:43 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:44 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:44 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Failed to enqueue telemetry: no running event loop
+2026-05-26 14:49:45 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:45 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:45 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:45 | backend.services.cost_engine.usage_collector | INFO | CostEngine: Telemetry worker started.
+2026-05-26 14:49:45 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Worker encountered error: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:49:45 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Worker encountered error: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:49:45 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Worker encountered error: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:49:45 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Worker encountered error: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:49:47 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Failed to enqueue telemetry: no running event loop
+2026-05-26 14:49:47 | backend.intelligence.project_tracker | INFO | 🗂️ Detected 1 project(s) for user 6a0ea793644a58164674360c: ['tammy']
+2026-05-26 14:49:47 | backend.intelligence.project_tracker | INFO | 🗂️ Created project 'tammy' for user 6a0ea793644a58164674360c
+2026-05-26 14:49:48 | backend.core_services.notification_manager | INFO | 🔔 Notification created: [project_created] 'Project added: tammy' for user 6a0ea793644a58164674360c
+2026-05-26 14:49:50 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Failed to enqueue telemetry: no running event loop
+2026-05-26 14:49:55 | ai.core.llm_client | INFO | Connected to Anthropic (claude-sonnet-4-20250514). Streaming response...
+2026-05-26 14:49:56 | backend.services.cost_engine.usage_collector | ERROR | CostEngine: Failed to enqueue telemetry: no running event loop
+2026-05-26 14:58:34 | backend.services.cost_engine.realtime_aggregator | ERROR | CostEngine: failed to fetch live metrics from Redis: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 14:58:39 | backend.services.cost_engine.realtime_aggregator | ERROR | CostEngine: failed to fetch live metrics from Redis: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 15:00:06 | backend.services.cost_engine.realtime_aggregator | ERROR | CostEngine: failed to fetch live metrics from Redis: 'RedisClient' object has no attribute 'pipeline'
+2026-05-26 15:00:11 | backend.services.cost_engine.realtime_aggregator | ERROR | CostEngine: failed to fetch live metrics from Redis: 'RedisClient' object has no attribute 'pipeline'
+./run_tammy.sh: line 36: 85070 Killed: 9               python -m backend.server

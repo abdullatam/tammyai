@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tammy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tammy/styles.css" />
+<style>
+@keyframes orb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes orb-breathe-bg { 0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+
+@keyframes tammy-orb-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes tammy-ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes tammy-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+  40% { opacity: 1; transform: scale(1); }
+}
+@keyframes tammy-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+#tammy-boot {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background:
+    radial-gradient(800px 600px at 50% 38%, rgba(148, 125, 237, 0.18), transparent 60%),
+    linear-gradient(180deg, #FFFFFF 0%, #F6F3FF 100%);
+  z-index: 9999;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  transition: opacity 480ms ease;
+}
+#tammy-boot.gone { opacity: 0; pointer-events: none; }
+
+html[data-theme="purple"] #tammy-boot {
+  background:
+    radial-gradient(800px 600px at 50% 38%, rgba(192, 172, 255, 0.20), transparent 60%),
+    linear-gradient(180deg, #1F1C30 0%, #262339 100%);
+}
+html[data-theme="purple"] .tb-word { color: #FFFFFF; }
+html[data-theme="purple"] .tb-word em { color: #C0ACFF; }
+html[data-theme="purple"] .tb-sub { color: rgba(255, 255, 255, 0.65); }
+html[data-theme="purple"] .tb-orb {
+  background: radial-gradient(circle at 32% 30%, #E0D4FF 0%, #C0ACFF 55%, #947DED 100%);
+  box-shadow:
+    inset 0 -16px 28px rgba(0, 0, 0, 0.35),
+    inset 0 16px 24px rgba(255, 255, 255, 0.25),
+    0 18px 48px rgba(192, 172, 255, 0.42);
+}
+html[data-theme="purple"] .tb-orb-glow {
+  background: radial-gradient(circle, rgba(192, 172, 255, 0.42), transparent 65%);
+}
+html[data-theme="purple"] .tb-ring { border-color: rgba(192, 172, 255, 0.55); }
+html[data-theme="purple"] .tb-ring.tb-ring-2 { border-color: rgba(192, 172, 255, 0.30); }
+html[data-theme="purple"] .tb-dots span { background: #C0ACFF; }
+
+.tb-orb-wrap {
+  position: relative;
+  width: 132px; height: 132px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tb-orb-glow {
+  position: absolute; inset: -28px;
+  background: radial-gradient(circle, rgba(148, 125, 237, 0.32), transparent 65%);
+  filter: blur(8px);
+  animation: tammy-orb-pulse 2400ms ease-in-out infinite;
+}
+.tb-orb {
+  width: 92px; height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #C0ACFF 0%, #947DED 55%, #6B5BC8 100%);
+  box-shadow:
+    inset 0 -16px 28px rgba(31, 28, 48, 0.22),
+    inset 0 16px 24px rgba(255, 255, 255, 0.30),
+    0 18px 48px rgba(148, 125, 237, 0.32);
+  animation: tammy-orb-pulse 2400ms ease-in-out infinite;
+  position: relative;
+}
+.tb-orb::before {
+  content: ''; position: absolute;
+  top: 14%; left: 22%; width: 26%; height: 18%;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+.tb-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(148, 125, 237, 0.45);
+  animation: tammy-ring-spin 9s linear infinite;
+}
+.tb-ring.tb-ring-2 {
+  inset: -16px;
+  border-style: dotted;
+  border-color: rgba(148, 125, 237, 0.25);
+  animation-direction: reverse;
+  animation-duration: 16s;
+}
+
+.tb-word {
+  margin-top: 36px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: #1F1C30;
+  animation: tammy-fade 600ms ease both;
+}
+.tb-word em {
+  font-style: italic;
+  font-weight: 400;
+  color: #947DED;
+}
+.tb-sub {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #3E3D40;
+  opacity: 0.7;
+  letter-spacing: 0.005em;
+  animation: tammy-fade 700ms 120ms ease both;
+}
+.tb-dots {
+  display: inline-flex; gap: 5px;
+  margin-left: 6px;
+  vertical-align: baseline;
+}
+.tb-dots span {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: #947DED;
+  animation: tammy-dot 1400ms ease-in-out infinite;
+}
+.tb-dots span:nth-child(2) { animation-delay: 180ms; }
+.tb-dots span:nth-child(3) { animation-delay: 360ms; }
+</style>
+</head>
+<body>
+<script>
+  // Apply persisted theme to <html> as early as possible so boot splash matches.
+  (function () {
+    try {
+      var t = localStorage.getItem('tammy_palette') || 'white';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<div id="root"></div>
+<div id="tammy-boot">
+  <div class="tb-orb-wrap">
+    <div class="tb-ring tb-ring-2"></div>
+    <div class="tb-ring"></div>
+    <div class="tb-orb-glow"></div>
+    <div class="tb-orb"></div>
+  </div>
+  <div class="tb-word">tammy<span style="opacity:.4">.</span></div>
+  <div class="tb-sub">she remembers everything</div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="tammy/data.js"></script>
+<script type="text/babel" src="tammy/components/Orb.jsx"></script>
+<script type="text/babel" src="tammy/components/Nav.jsx"></script>
+<script type="text/babel" src="tammy/components/Tweaks.jsx"></script>
+<script type="text/babel" src="tammy/components/TammyLoading.jsx"></script>
+<script type="text/babel" src="tammy/components/Buckets.jsx"></script>
+<script type="text/babel" src="tammy/screens/Chat.jsx"></script>
+<script type="text/babel" src="tammy/screens/Today.jsx"></script>
+<script type="text/babel" src="tammy/screens/Arc.jsx"></script>
+<script type="text/babel" src="tammy/screens/Other.jsx"></script>
+<script type="text/babel" src="tammy/screens/Profile.jsx"></script>
+<script type="text/babel" src="tammy/screens/Extra.jsx"></script>
+
+<script type="text/babel">
+/*EDITMODE-BEGIN*/
+const TWEAK_DEFAULTS = {
+  "chatLayout": "prose",
+  "navVisible": true,
+  "orbPreview": "idle",
+  "palette": "white"
+};
+/*EDITMODE-END*/
+
+const PALETTES = {
+  white: {
+    '--canvas': '#FFFFFF', '--canvas-tint': '#F6F3FF', '--surface': '#FFFFFF', '--surface-2': '#F0EAFF',
+    '--ink': '#1F1C30',
+    '--ink-2': '#3E3D40', '--ink-3': 'rgba(31, 28, 48, 0.55)',
+    '--mauve': 'rgba(31, 28, 48, 0.18)', '--mauve-soft': 'rgba(31, 28, 48, 0.07)',
+    '--amber': '#947DED', '--amber-hi': '#C0ACFF', '--amber-soft': 'rgba(148, 125, 237, 0.14)', '--amber-glow': 'rgba(148, 125, 237, 0.38)',
+  },
+  purple: {
+    '--canvas': '#1F1C30', '--canvas-tint': '#262339', '--surface': '#2A2740', '--surface-2': '#332F4A',
+    '--ink': '#FFFFFF',
+    '--ink-2': 'rgba(255, 255, 255, 0.80)', '--ink-3': 'rgba(255, 255, 255, 0.58)',
+    '--mauve': 'rgba(255, 255, 255, 0.20)', '--mauve-soft': 'rgba(255, 255, 255, 0.08)',
+    '--amber': '#C0ACFF', '--amber-hi': '#947DED', '--amber-soft': 'rgba(192, 172, 255, 0.18)', '--amber-glow': 'rgba(192, 172, 255, 0.45)',
+  },
+};
+
+const App = () => {
+  // Route: 'landing' | 'onboarding' | 'today' | 'chat' | 'arc' | 'memory' | 'settings' | 'voice' | 'profile'
+  const [route, setRoute] = React.useState(() => localStorage.getItem('tammy_route') || 'landing');
+  const [tweaks, setTweaks] = React.useState(() => {
+    try {
+      const savedPalette = localStorage.getItem('tammy_palette');
+      return savedPalette ? { ...TWEAK_DEFAULTS, palette: savedPalette } : TWEAK_DEFAULTS;
+    } catch (e) { return TWEAK_DEFAULTS; }
+  });
+  const [tweaksOn, setTweaksOn] = React.useState(false);
+  const [activeBucket, setActiveBucket] = React.useState('b_tammy');
+
+  React.useEffect(() => { localStorage.setItem('tammy_route', route); }, [route]);
+
+  // Apply palette by writing CSS vars on :root + persist for next boot
+  React.useEffect(() => {
+    const p = PALETTES[tweaks.palette] || PALETTES.white;
+    Object.entries(p).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    document.documentElement.setAttribute('data-theme', tweaks.palette);
+    try { localStorage.setItem('tammy_palette', tweaks.palette); } catch (e) {}
+  }, [tweaks.palette]);
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOn(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOn(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweaks = (next) => {
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+  };
+
+  const go = (r) => {
+    if (r === 'voice') { setRoute('voice'); return; }
+    setRoute(r);
+  };
+
+  if (route === 'landing') return <Landing onEnter={() => setRoute('onboarding')} />;
+  if (route === 'onboarding') return <OnboardingScreen onDone={() => setRoute('today')} />;
+  if (route === 'voice') return <VoiceMode onExit={() => setRoute('chat')} />;
+
+  const Screen =
+    route === 'today' ? <TodayScreen onNavigate={go} activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+    route === 'chat' ? <ChatScreen layout={tweaks.chatLayout} onOpenVoice={() => setRoute('voice')} activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+    route === 'arc' ? <ArcScreen activeBucket={activeBucket} setActiveBucket={setActiveBucket} /> :
+    route === 'dna' ? <DNAScreen /> :
+    route === 'blindspots' ? <BlindSpotsScreen /> :
+    route === 'calibration' ? <CalibrationScreen /> :
+    route === 'mirror' ? <MirrorScreen /> :
+    route === 'decisions' ? <DecisionsScreen /> :
+    route === 'projects' ? <ProjectsScreen /> :
+    route === 'network' ? <NetworkScreen /> :
+    route === 'memory' ? <MemoryScreen /> :
+    route === 'settings' ? <SettingsScreen /> :
+    route === 'profile' ? <ProfileScreen onNavigate={go} /> :
+    <TodayScreen onNavigate={go} activeBucket={activeBucket} setActiveBucket={setActiveBucket} />;;
+
+  return (
+    <>
+      {tweaks.navVisible && <Nav active={route} onNavigate={go} userInitial="T" />}
+      {Screen}
+      <TweaksPanel tweaks={tweaks} setTweaks={updateTweaks} visible={tweaksOn} />
+      {/* Small floating palette toggle top-right */}
+      <div style={{
+        position: 'fixed', top: 18, right: 18, zIndex: 400,
+        display: 'flex', gap: 3, padding: 3, borderRadius: 999,
+        background: 'rgba(250, 244, 230, 0.75)', backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(28, 20, 16, 0.15)',
+        boxShadow: '0 4px 16px rgba(28, 20, 16, 0.08)',
+      }}>
+        {[['white', 'white'], ['purple', 'purple']].map(([v, l]) => (
+          <button key={v} onClick={() => updateTweaks({ ...tweaks, palette: v })} style={{
+            padding: '6px 14px', fontSize: 11, border: 'none', borderRadius: 999,
+            background: tweaks.palette === v ? 'var(--ink)' : 'transparent',
+            color: tweaks.palette === v ? 'var(--canvas)' : 'var(--ink-3)',
+            fontFamily: 'var(--f-mono)', letterSpacing: '0.12em', textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}>{l}</button>
+        ))}
+      </div>
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+// Fade out boot screen once React has mounted
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    const boot = document.getElementById('tammy-boot');
+    if (boot) {
+      boot.classList.add('gone');
+      setTimeout(() => boot.remove(), 600);
+    }
+  }, 350);
+});
+</script>
+</body>
+</html>
