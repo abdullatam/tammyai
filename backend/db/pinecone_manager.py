@@ -246,10 +246,8 @@ class PineconeManager:
         if not self.available:
             return []
         try:
-            if not hasattr(self, "_cached_all_memories_vec"):
-                self._cached_all_memories_vec = self._embed("memory identity venture pattern relationship decision emotional value")
-            vec = self._cached_all_memories_vec
-            if not vec: return []
+            # Use a dummy zero vector for pure metadata-based retrieval (1536 dims for text-embedding-3-small)
+            vec = [0.0] * 1536
             r = self.memory_index.query(
                 vector=vec,
                 top_k=1000,
@@ -310,10 +308,8 @@ class PineconeManager:
         if not self.available:
             return []
         try:
-            # Generic query to fetch list
-            vec = self._embed("brand playbook company knowledge context")
-            if not vec:
-                return []
+            # Generic query to fetch list using a zero vector
+            vec = [0.0] * 1536
             r = self.memory_index.query(
                 vector=vec,
                 top_k=100,

@@ -380,6 +380,10 @@ async def chat_stream(request: Request):
             effective_message = typing_signal_note + message if typing_signal_note else message
 
             language = body.get("language", "en")
+            # Auto-detect Arabic text
+            import re
+            if re.search(r'[\u0600-\u06FF]', message):
+                language = "ar"
 
             # Load attachment data from storage
             attachments_data = []

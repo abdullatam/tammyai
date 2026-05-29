@@ -20,6 +20,7 @@ from backend.core_services.memory_manager import (
     get_energy_level,
 )
 from ai.core.context_builder import build_context, get_system_prompt
+from ai.rag.tammy_rag import ARABIC_SYSTEM_PROMPT
 from ai.core.llm_client import stream_response
 from backend.config import config
 from backend.logger import get_logger
@@ -259,11 +260,11 @@ def ask_tammy(
                 
     if is_simple:
         logger.info(f"⚡ FAST PATH: Simple conversational message detected")
-        system_prompt = "Your name is Tammy. You are a warm, supportive, and natural conversational partner. Keep your answers brief and conversational."
         if language == 'ar':
-            system_prompt = "CRITICAL DIRECTIVE: YOU MUST RESPOND ENTIRELY IN ARABIC. DO NOT USE ENGLISH.\n\n" + system_prompt
-            llm_question = f"[USER IS SPEAKING ARABIC - REPLY IN ARABIC] {question}"
+            system_prompt = ARABIC_SYSTEM_PROMPT
+            llm_question = question
         else:
+            system_prompt = "Your name is Tammy. You are a warm, supportive, and natural conversational partner. Keep your answers brief and conversational."
             llm_question = question
         history_slice = history[-2:] if history else []
         
@@ -346,12 +347,13 @@ def ask_tammy(
     )
 
     # 5. Stream LLM
-    system_prompt  = override_prompt if override_prompt else get_system_prompt()
-    if language == 'ar':
-        system_prompt = "CRITICAL DIRECTIVE: YOU MUST RESPOND ENTIRELY IN ARABIC. DO NOT USE ENGLISH. ALL YOUR OUTPUT MUST BE IN ARABIC.\n\n" + system_prompt
-        llm_question = f"[USER IS SPEAKING ARABIC - REPLY IN ARABIC] {question}"
+    if override_prompt:
+        system_prompt = override_prompt
+    elif language == 'ar':
+        system_prompt = ARABIC_SYSTEM_PROMPT
     else:
-        llm_question = question
+        system_prompt = get_system_prompt()
+    llm_question = question
         
     full_response  = []
     t1 = time.time()

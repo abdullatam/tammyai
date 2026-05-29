@@ -293,18 +293,36 @@ const TestPage = () => {
                 <Icon name="refresh" size={12} />
                 {isExtracting ? 'Extracting...' : 'Re-extract'}
               </button>
-              <button className="btn btn-primary" style={{ 
-                  padding: '6px 16px', 
-                  fontSize: 12,
-                  borderRadius: 20,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6
-                }} 
-                onClick={startTest} disabled={runStatus === 'running' || promises.length === 0}>
-                <Icon name="play" size={14} />
-                Test
-              </button>
+              {runStatus === 'running' ? (
+                <button className="btn" style={{ 
+                    padding: '6px 16px', 
+                    fontSize: 12,
+                    borderRadius: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'var(--danger)',
+                    color: '#fff',
+                    border: 'none'
+                  }} 
+                  onClick={stopTest}>
+                  <Icon name="stop" size={14} />
+                  Stop
+                </button>
+              ) : (
+                <button className="btn btn-primary" style={{ 
+                    padding: '6px 16px', 
+                    fontSize: 12,
+                    borderRadius: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }} 
+                  onClick={startTest} disabled={promises.length === 0}>
+                  <Icon name="play" size={14} />
+                  Test
+                </button>
+              )}
             </div>
           </div>
           

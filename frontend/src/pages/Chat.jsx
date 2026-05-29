@@ -1268,6 +1268,7 @@ const Line = ({ m, layout, streaming }) => {
           lineHeight: 1.55,
           color: isAsym ? 'var(--ink-2)' : 'var(--ink-2)',
           textWrap: 'pretty',
+          whiteSpace: 'pre-wrap',
           background: isAsym ? 'rgba(138, 92, 196, 0.10)' : 'transparent',
           padding: isAsym ? '10px 16px' : 0,
           borderRadius: isAsym ? 14 : 0,
