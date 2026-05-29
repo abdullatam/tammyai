@@ -766,8 +766,8 @@ const ChatScreen = ({ layout = 'prose', onOpenVoice, activeBucket, setActiveBuck
             </p>
           </div>
         )}
-        {messages.map((m, i) => <Line key={i} m={m} layout={layout} />)}
-        {streaming && <Line m={{ role: 'tammy', text: streaming }} layout={layout} streaming />}
+        {messages.map((m, i) => <Line key={i} m={m} layout={layout} sessionId={activeChatIdRef.current} />)}
+        {streaming && <Line m={{ role: 'tammy', text: streaming }} layout={layout} streaming sessionId={activeChatIdRef.current} />}
         {orbState === 'thinking' && !streaming && (
           <div className="serif" style={{ color: 'var(--mauve)', fontSize: 22, padding: '20px 0', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 10 }}>
             {isSearchingWeb.current && (
@@ -1212,10 +1212,16 @@ const renderInline = (text) => {
   return parts.length > 0 ? parts : [text];
 };
 
-const MessageActions = ({ m, text }) => {
+const MessageActions = ({ m, text, sessionId }) => {
   const [copied, setCopied] = React.useState(false);
   const [speaking, setSpeaking] = React.useState(false);
-  const [feedback, setFeedback] = React.useState(null);
+  const [feedback, setFeedback] = React.useState(m.feedback || null);
+  
+  React.useEffect(() => {
+    if (m.feedback) {
+      setFeedback(m.feedback);
+    }
+  }, [m.feedback]);
   const audioRef = React.useRef(null);
   
   const handleCopy = () => {
@@ -1285,14 +1291,16 @@ const MessageActions = ({ m, text }) => {
     if (feedback === verdict) return;
     setFeedback(verdict);
     try {
-      await fetch('/api/chat/feedback', {
+      const base = window.TAMMY_API || '';
+      await fetch(`${base}/api/chat/feedback`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message_id: m.id || null,
-          session_id: window.TammyData?.pendingVoiceSessionId || null,
+          session_id: sessionId || window.TammyData?.activeSession?.id || null,
           text: text,
-          verdict: verdict
+          verdict
         })
       });
     } catch(e) { console.error('Feedback error:', e); }
@@ -1327,7 +1335,7 @@ const MessageActions = ({ m, text }) => {
 };
 
 
-const Line = ({ m, layout, streaming }) => {
+const Line = ({ m, layout, streaming, sessionId }) => {
   const isNetworkMsg = m.type && m.type.startsWith('network_');
 
   if (m.role === 'tammy') {
@@ -1352,7 +1360,7 @@ const Line = ({ m, layout, streaming }) => {
           {renderMarkdown(m.text)}
           {streaming && <span style={{ display: 'inline-block', width: 8, height: 24, background: 'var(--amber)', marginLeft: 4, verticalAlign: '-4px', animation: 'blink 1s infinite' }} />}
         </div>
-        {!streaming && !isNetworkMsg && <MessageActions m={m} text={m.text} />}
+        {!streaming && !isNetworkMsg && <MessageActions m={m} text={m.text} sessionId={sessionId} />}
         {isNetworkMsg && <NetworkActionButtons m={m} />}
       </div>
     );

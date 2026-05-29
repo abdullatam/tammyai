@@ -288,6 +288,13 @@ async def submit_feedback(req: FeedbackRequest, request: Request):
         "verdict": req.verdict,
         "created_at": datetime.datetime.utcnow()
     })
+    
+    if req.session_id and req.text:
+        db["conversations"].update_many(
+            {"session_id": req.session_id, "messages.text": req.text},
+            {"$set": {"messages.$.feedback": req.verdict}}
+        )
+        
     return {"status": "ok"}
 
 @app.get("/api/admin/feedback")
