@@ -91,6 +91,8 @@ async def admin_me(admin: str = Depends(require_admin)):
 @app.get("/admin/profile", response_class=HTMLResponse)
 @app.get("/admin/health", response_class=HTMLResponse)
 @app.get("/admin/eq", response_class=HTMLResponse)
+@app.get("/admin/feedback", response_class=HTMLResponse)
+@app.get("/admin/convos", response_class=HTMLResponse)
 async def admin_spa():
     with open("frontend/public/admin_index.html", "r") as f:
         return HTMLResponse(content=f.read())
@@ -261,7 +263,43 @@ async def voice_tts_stream(request: Request, user_id: str = Depends(get_current_
     except Exception as e:
         logger.error(f"ElevenLabs TTS exception: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
+from pydantic import BaseModel
+from typing import Optional
+class FeedbackRequest(BaseModel):
+    message_id: Optional[str] = None
+    session_id: Optional[str] = None
+    text: str
+    verdict: str
 
+@app.post("/api/chat/feedback")
+async def submit_feedback(req: FeedbackRequest, request: Request):
+    user_id = request.cookies.get("token") or config.DEFAULT_USER_ID
+    from backend.db.mongodb_client import _mongodb_client
+    import datetime
+    db = _mongodb_client._db
+    if db is None:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+    
+    db["message_feedback"].insert_one({
+        "user_id": user_id,
+        "message_id": req.message_id,
+        "session_id": req.session_id,
+        "text": req.text,
+        "verdict": req.verdict,
+        "created_at": datetime.datetime.utcnow()
+    })
+    return {"status": "ok"}
+
+@app.get("/api/admin/feedback")
+async def get_feedback(request: Request):
+    from backend.db.mongodb_client import _mongodb_client
+    db = _mongodb_client._db
+    if db is None:
+        return []
+    feedbacks = list(db["message_feedback"].find().sort("created_at", -1).limit(100))
+    for f in feedbacks:
+        f["_id"] = str(f["_id"])
+    return feedbacks
 
 @app.post("/chat/stream")
 async def chat_stream(request: Request):

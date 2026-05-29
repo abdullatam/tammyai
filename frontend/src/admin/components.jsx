@@ -110,6 +110,7 @@ const NAV_ITEMS = [
   { key: 'prompt', label: 'System Prompt', icon: 'prompt' },
   { key: 'rag', label: 'RAG Books', icon: 'rag' },
   { key: 'users', label: 'Active Users', icon: 'users' },
+  { key: 'feedback', label: 'Feedback', icon: 'star' },
   { key: 'test', label: 'Self-Test', icon: 'test' },
   { key: 'health', label: 'Health', icon: 'health' },
   { key: 'settings', label: 'Settings', icon: 'settings' },

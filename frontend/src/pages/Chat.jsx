@@ -1212,6 +1212,121 @@ const renderInline = (text) => {
   return parts.length > 0 ? parts : [text];
 };
 
+const MessageActions = ({ m, text }) => {
+  const [copied, setCopied] = React.useState(false);
+  const [speaking, setSpeaking] = React.useState(false);
+  const [feedback, setFeedback] = React.useState(null);
+  const audioRef = React.useRef(null);
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const handleSpeak = async () => {
+    if (speaking) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setSpeaking(false);
+      return;
+    }
+
+    setSpeaking(true);
+    try {
+      const isArabic = /[\u0600-\u06FF]/.test(text);
+      const response = await fetch('/api/voice/tts-stream', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          language: isArabic ? 'ar' : 'en'
+        })
+      });
+
+      if (!response.ok) {
+        setSpeaking(false);
+        return;
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        setSpeaking(false);
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+        setSpeaking(false);
+      };
+
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+        setSpeaking(false);
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.error('ElevenLabs TTS error:', err);
+      setSpeaking(false);
+    }
+  };
+
+  const handleFeedback = async (verdict) => {
+    if (feedback === verdict) return;
+    setFeedback(verdict);
+    try {
+      await fetch('/api/chat/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message_id: m.id || null,
+          session_id: window.TammyData?.pendingVoiceSessionId || null,
+          text: text,
+          verdict: verdict
+        })
+      });
+    } catch(e) { console.error('Feedback error:', e); }
+  };
+
+  const btnStyle = {
+    background: 'none', border: 'none', padding: 4, cursor: 'pointer',
+    color: 'var(--ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 4, transition: 'all 0.2s'
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 12, marginTop: 12, marginLeft: -4 }}>
+      <button style={btnStyle} onClick={handleCopy} title="Copy" onMouseEnter={e => e.currentTarget.style.color = 'var(--ink-2)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--ink-3)'}>
+        {copied ? (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        )}
+      </button>
+      <button style={btnStyle} onClick={handleSpeak} title="Read Aloud" onMouseEnter={e => e.currentTarget.style.color = 'var(--ink-2)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--ink-3)'}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={speaking ? 'var(--iris)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+      </button>
+      <button style={{...btnStyle, color: feedback === 'like' ? '#4CAF50' : 'var(--ink-3)'}} onClick={() => handleFeedback('like')} title="Good response" onMouseEnter={e => e.currentTarget.style.color = 'var(--ink-2)'} onMouseLeave={e => e.currentTarget.style.color = feedback === 'like' ? '#4CAF50' : 'var(--ink-3)'}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+      </button>
+      <button style={{...btnStyle, color: feedback === 'dislike' ? '#F44336' : 'var(--ink-3)'}} onClick={() => handleFeedback('dislike')} title="Bad response" onMouseEnter={e => e.currentTarget.style.color = 'var(--ink-2)'} onMouseLeave={e => e.currentTarget.style.color = feedback === 'dislike' ? '#F44336' : 'var(--ink-3)'}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"></path></svg>
+      </button>
+    </div>
+  );
+};
+
+
 const Line = ({ m, layout, streaming }) => {
   const isNetworkMsg = m.type && m.type.startsWith('network_');
 
@@ -1237,6 +1352,7 @@ const Line = ({ m, layout, streaming }) => {
           {renderMarkdown(m.text)}
           {streaming && <span style={{ display: 'inline-block', width: 8, height: 24, background: 'var(--amber)', marginLeft: 4, verticalAlign: '-4px', animation: 'blink 1s infinite' }} />}
         </div>
+        {!streaming && !isNetworkMsg && <MessageActions m={m} text={m.text} />}
         {isNetworkMsg && <NetworkActionButtons m={m} />}
       </div>
     );
@@ -1348,12 +1464,12 @@ const SessionItem = ({ item, isActive, isDeleting, isPinned, onSelect, onDeleteS
         style={{
           width: '100%',
           textAlign: 'left',
-          padding: '10px 12px',
+          padding: '8px 12px',
           paddingRight: hovered && !isEditing ? 68 : 12,
-          minHeight: 60,
-          borderRadius: 12,
+          minHeight: 36,
+          borderRadius: 8,
           border: 'none',
-          background: isActive ? 'rgba(148, 125, 237, 0.18)' : hovered ? 'rgba(178, 157, 217, 0.12)' : 'transparent',
+          background: isActive ? 'var(--surface-3)' : hovered ? 'var(--surface-1)' : 'transparent',
           cursor: isEditing ? 'default' : 'pointer',
           marginBottom: 2,
           transition: 'background 160ms ease, padding-right 160ms ease',
@@ -1489,7 +1605,21 @@ const SessionItem = ({ item, isActive, isDeleting, isPinned, onSelect, onDeleteS
 const ChatHistoryPanel = ({ open, onToggle, activeId, onSelect, onNewChat, onDelete }) => {
   const [deletingId, setDeletingId] = React.useState(null);
   const [localHistory, setLocalHistory] = React.useState(null); // null = use TammyData
+  const [projects, setProjects] = React.useState([]);
+
   React.useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const base = window.TAMMY_API || '';
+        const res = await fetch(`${base}/api/projects`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setProjects(data);
+        }
+      } catch (e) {}
+    };
+    fetchProjects();
+
     const h = () => setLocalHistory(null); // force re-read from TammyData
     window.addEventListener('tammy:dataready', h);
     return () => window.removeEventListener('tammy:dataready', h);
